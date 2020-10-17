@@ -129,7 +129,7 @@ STATICFILES_DIRS = [
 ]
 
 MEDIA_ROOT= os.path.join(BASE_DIR, 'statics/images').replace("\\", "/")
-#MEDIA_URL = '/media/'
+MEDIA_URL = '/media/'
 
 
 EMAIL_USE_SSL = True
