@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<h3>注册</h3>
+<form  enctype="multipart/form-data" action="" method="post" novalidate>
+    {% csrf_token %}
+    <div>
+        <label>用户名</label>
+        <input type="text" name="username">
+    </div>
+    <div>
+        <label>密码</label>
+        <input type="text" name="password">
+    </div>
+    <div>
+        <label>请再输入密码</label>
+        <input type="text" name="r_password">
+    </div>
+    <div>
+        <label>邮箱</label>
+        <input type="text" name="email">
+    </div>
+    <div>
+        <label>验证码</label>
+        <input type="text" name="code">
+    </div>
+<!--    <div>-->
+<!--        <label>头像</label>-->
+<!--&lt;!&ndash;        <img name="profile" src="{% static 'images/cat.jpg' %}" alt="图片无法显示">&ndash;&gt;-->
+<!--        <input type="file" name="profile">-->
+<!--    </div>-->
+<!--    <form enctype="multipart/form-data" action="" method="post">-->
+<!--        {% csrf_token %}-->
+<!--        <input type="file" name="profile">-->
+<!--        <input type="submit" value="提交">-->
+<!--    </form>-->
+    <input type="submit" value="注册">
+
+
+</form>
+<!--<form enctype="multipart/form-data" action="" method="post">-->
+<!--        {% csrf_token %}-->
+<!--        <input type="file" name="profile">-->
+<!--        <input type="submit" value="提交">-->
+<!--</form>-->
+</body>
+</html>
