@@ -3,12 +3,10 @@ from django.urls import path
 from . import views
 urlpatterns = [
     path('register',views.resgister),
-    path('sendRegisterCode',views.send_veri_code_regsiter),
+    path('sendRegisterCode',views.send_veri_code_register),
     path("sendLoginCode",views.send_veri_code_login),
-    path('verify',views.send_veri_code_regsiter),
+    path('verify',views.send_veri_code_register),
     path('login',views.login),
-    #
-    #path('verify',views.verify),
     path('modifyPwd',views.modify_password),
     path('modifyAddress',views.modify_address),
     path('modifyBirthday',views.modify_birthday),
@@ -22,5 +20,4 @@ urlpatterns = [
     path('getNickname', views.get_nickname),
     path('getProfile', views.get_profile_path),
     path('getSignature', views.get_signature),
-    path('getBlog', views.get_blogs),
 ]

@@ -29,7 +29,8 @@ def check_email(email):
     # Return:
     #     True if the email is valid
     #     False if the email is invalid
-    pattern=r'^[0-9a-zA-Z_]{0,19}@[0-9a-z]{1,10}[\\.]{0,1}[0-9a-z]{0,10}\.[com,cn,net]{1,3}$'
+    pattern=r'^[0-9a-zA-Z_]{0,19}@fudan\.edu\.cn$'
+    #pattern=r'^[0-9a-zA-Z_]{0,19}@[0-9a-z]{1,10}(\.[a-z]+)?(\.com|\.net|\.cn){1,3}$'
     if re.match(pattern,email):
         return True
     return False
@@ -73,25 +74,27 @@ def resgister(request):
     # Return:
     #     An HttpResponse which contains {"error_code":<int>, "message":<str>,"data":None}
     content={}
-    User.objects.all().delete()
     if request.method == 'POST':
         username = request.POST.get('username')
         password = request.POST.get('password')
         r_password= request.POST.get('r_password')
         email = request.POST.get('email')
         code = request.POST.get('code')
+        print("email = ", email)
         if User.objects.filter(username=username).exists():
             content = {"error_code":401,"message":"用户名已注册","data":None}
+        elif not (1 <= len(username) and len(username) <= 20):
+            content = {"error_code":403,"message":"用户名长度应在1-20之间","data":None}
         elif User.objects.filter(email=email).exists():
             content = {"error_code":401,"message":"邮箱已注册","data":None}
         elif check_password2(password)==False:
-            content = {"error_code": 402, "message": "密码只能由大小写字母，数字组成，且长度应在6-20", "data": None}
+            content = {"error_code": 403, "message": "密码只能由大小写字母，数字组成，且长度应在6-20之间", "data": None}
         elif password != r_password:
             content = {"error_code":402,"message":"两次输入的密码不一致","data":None}
         elif check_email(email)==False:
             content = {"error_code": 403, "message": "邮箱格式不正确", "data": None}
         elif check_veri_code(email,code)==False:
-            content = {"error_code": 403, "message": "验证码不正确或已过期", "data": None}
+            content = {"error_code": 402, "message": "验证码不正确或已过期", "data": None}
         else:
             content = {"error_code": 200, "message": "注册成功", "data": None}
             password=make_password(password)
@@ -102,7 +105,7 @@ def resgister(request):
 
     #return render(request,'register.html')
 
-def send_veri_code_regsiter(request):
+def send_veri_code_register(request):
     # 向用户发送注册验证码
     # Arguments:
     #     request: It should contains {"email":<str>}
@@ -113,6 +116,8 @@ def send_veri_code_regsiter(request):
         email = request.POST.get('email')
         if check_email(email) == False:
             content = {"error_code": 403, "message": "邮箱格式不正确", "data": None}
+        elif User.objects.filter(email=email).exists():
+            content = {"error_code":401,"message":"邮箱已注册","data":None}
         else:
             code =generate_veri_code(email)
             subject = "蛋博注册验证"
@@ -154,7 +159,9 @@ def send_veri_code_login(request):
     if request.method == 'POST':
         email = request.POST.get('email')
         if check_email(email) == False:
-            content = {"error_code": 403, "message": "邮箱格式不正确", "data": None}
+            content = {"error_code": 423, "message": "邮箱格式不正确", "data": None}
+        elif email != User.objects.filter(email=email):
+            content = {"error_code": 422, "message": "该邮箱不是您注册时填写的邮箱", "data": None}
         else:
             code = generate_veri_code(email)
             subject = "蛋博找回密码"
@@ -164,28 +171,10 @@ def send_veri_code_login(request):
     #return render(request, 'mail.html')
     return HttpResponse(json.dumps(content))
 
-def verify(request):
-    # 验证
-    # Arguments:
-    #     request: It should contains {"email":<str>,"code":<str>}
-    # Return:
-    #     An HttpResponse which contains {"error_code":<int>, "message":<str>,"data":None}
-    content = {}
-    if request.method == 'POST':
-        code = request.POST.get('code')
-        email = request.POST.get('email')
-        if VerificationCode.objects.filter(email=email).exists()==False:
-            content = {"error_code": 421, "message": "验证码不正确", "data": None}
-        elif check_veri_code(email,code) == False:
-            content = {"error_code": 421, "message": "验证码不正确", "data": None}
-        else:
-            content = {"error_code": 200, "message": "验证成功", "data": None}
-    return HttpResponse(json.dumps(content))
-
 def modify_password(request):
     # 用户修改密码
     # Arguments:
-    #     request: It should contains {"username":<str>, "password":<str>,"r_password":<str>}
+    #     request: It should contains {"username":<str>, "password":<str>,"r_password":<str>, "email":<str>, "code":<str>}
     # Return:
     #     An HttpResponse which contains {"error_code":<int>, "message":<str>,"data":None}
     content = {}
@@ -193,12 +182,20 @@ def modify_password(request):
         username = request.POST.get('username')
         password = request.POST.get('password')
         r_password= request.POST.get('r_password')
+        email = request.POST.get('email')
+        code = request.POST.get('code')
         if User.objects.filter(username=username).exists()==False:
-            content = {"error_code":431,"message":"用户名不存在","data":None}
+            content = {"error_code":421,"message":"用户名不存在","data":None}
         elif check_password2(password)==False:
-            content = {"error_code": 432, "message": "密码只能由大小写字母，数字组成，且长度应在6-20", "data": None}
+            content = {"error_code": 423, "message": "密码只能由大小写字母，数字组成，且长度应在6-20", "data": None}
         elif password != r_password:
-            content = {"error_code":432,"message":"两次输入的密码不一致","data":None}
+            content = {"error_code":422,"message":"两次输入的密码不一致","data":None}
+        elif check_email(email)==False:
+            content = {"error_code": 423, "message": "邮箱格式不正确", "data": None}
+        elif email != User.objects.filter(email=email):
+            content = {"error_code": 422, "message": "该邮箱不是您注册时填写的邮箱", "data": None}
+        elif check_veri_code(email,code)==False:
+            content = {"error_code": 422, "message": "验证码不正确或已过期", "data": None}
         else:
             password=make_password(password)
             User.objects.get(username=username).update(password=password)
@@ -414,32 +411,6 @@ def get_profile_path(request):
         else:
             profile_path=User.objects.get(username=username).profile
             content = {"error_code": 200, "message": "获取头像路径成功", "data": profile_path}
-    return HttpResponse(json.dumps(content))
-
-
-def get_blogs(request):
-    # 获取用户发布过的所有博客
-    # Arguments:
-    #     request: It should contains {"username":<str>}
-    # Return:
-    #     An HttpResponse which contains {"error_code":<int>, "message":<str>,"data":<dict>}
-    #     Here data is a dictionary, its key is the release time(str) of the blog, and its value is a tuple (content,a list of  picture paths)
-    content = {}
-    data = {}
-    if request.method == 'POST':
-        username = request.POST.get('username')
-        if User.objects.filter(username=username).exists()==False:
-            content = {"error_code":441,"message":"用户名不存在","data":None}
-        else:
-            user = User.objects.get(username=username)
-            blogs = Blog.objects.filter(user_id = user.id)
-            for b in blogs:
-                pictures = Picture.objects.filter(blog=b)
-                picture_paths = []
-                for pic in pictures:
-                    picture_paths.append(pic.image)
-                data[str(b.release_time)] = (b.content,picture_paths)
-            content = {"error_code": 200, "message": "获取博客成功", "data": data}
     return HttpResponse(json.dumps(content))
 
 
