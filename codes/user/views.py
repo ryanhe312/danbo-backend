@@ -256,7 +256,7 @@ def modify_address(request):
         if User.objects.filter(username=username).exists()==False:
             content = {"error_code":431,"message":"用户名不存在","data":None}
         elif len(address)>40:
-            content = {"error_code": 433, "message": "昵称长度应小于40个字符", "data": None}
+            content = {"error_code": 433, "message": "地址长度应小于40个字符", "data": None}
         else:
             User.objects.get(username=username).update(address=address)
             content = {"error_code": 200, "message": "地址修改成功", "data": None}
