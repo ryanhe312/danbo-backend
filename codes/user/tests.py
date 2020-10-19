@@ -44,13 +44,13 @@ class TestRegister(TestCase):
         print("--------测试空用户名--------")
         self.user['username'] = ""
         error = self.template_test()
-        assert error == 401, "error code = %d"%(error)
+        assert error == 403, "error code = %d"%(error)
         #用户名过长
         print("--------测试长用户名--------")
         i = random.randint(21, 30)
         self.user['username'] = ''.join(random.sample(string.ascii_letters + string.digits + "!@#$%^&*()?><{}[]", i))
         error = self.template_test()
-        assert error == 401, "error code = %d"%(error)
+        assert error == 403, "error code = %d"%(error)
 
     def test_register_illegal_password(self):
         # 不合法密码
@@ -60,19 +60,19 @@ class TestRegister(TestCase):
         print("--------测试短密码--------")
         self.user['password'] = ''.join(random.sample(string.ascii_letters + string.digits, i))
         error = self.template_test()
-        assert error == 402, "error code = %d"%(error)
+        assert error == 403, "error code = %d"%(error)
         # 密码过长
         print("--------测试长密码--------")
         i = random.randint(21, 30)
         self.user['password'] = ''.join(random.sample(string.ascii_letters + string.digits, i))
         error = self.template_test()
-        assert error == 402, "error code = %d"%(error)
+        assert error == 403, "error code = %d"%(error)
         # 密码含有违规字符
         print("--------测试违规密码--------")
         i = random.randint(1, 30)
         self.user['password'] = ''.join(random.sample(string.ascii_letters + string.digits, i - 1) + random.sample("!@#$%^&*()?><{}[]", 1))
         error = self.template_test()
-        assert error == 402, "error code = %d"%(error)
+        assert error == 403, "error code = %d"%(error)
 
     def test_register_illigal_rpassword(self):
         # 不合法重输入密码
@@ -81,6 +81,20 @@ class TestRegister(TestCase):
         # 去掉开头字符
         self.user['r_password'] = self.user['password'][1: ]
         error = self.template_test()
+        assert error == 402, "error code = %d"%(error)
+
+    def test_register_wrong_code(self):
+        # 验证码错误
+
+        error = self.template_test(code_correct = False)
+        assert error == 402, "error code = %d"%(error)
+
+    def test_register_email_conflict(self):
+        # 邮箱冲突
+        # 即发送验证码的邮箱和注册表单中的邮箱不同
+
+        print("--------测试错误电子邮件--------")
+        error = self.template_test(email_correct = False)
         assert error == 402, "error code = %d"%(error)
 
     def test_register_illegal_email(self):
@@ -125,10 +139,10 @@ class TestRegister(TestCase):
         assert error == 401, "error code = %d"%(error)
 
     # 注册时发送表单的模板
-    def template_test(self, correct = True):
+    def template_test(self, code_correct = True, email_correct = True):
         # 注册时的测试模板
         # Arguments:
-        #     correct:<bool>
+        #     code_correct:<bool>, email_correct:<bool>
         # Return:
         #     error code<int>
 
@@ -148,11 +162,16 @@ class TestRegister(TestCase):
         input_code = code
         # 错误验证码 
         # 随机选择一位进行更改，进行增加取模操作
-        if correct == False:
+        if code_correct == False:
             i = random.randint(0, 3)
             ch = int(input_code[i])
             ch = (ch + random.randint(1, 8)) % 10
             input_code = input_code[ :i] + str(ch) + input_code[i + 1:]
+
+        # 错误邮箱
+        #
+        if email_correct == False:
+            self.user['email'] = "17307130056@fudan.edu.cn"
 
         print("发送的验证码为：%s, 输入的验证码为：%s"%(code, input_code))
 
