@@ -7,7 +7,8 @@ urlpatterns = [
     path("sendLoginCode",views.send_veri_code_login),
     path('verify',views.send_veri_code_regsiter),
     path('login',views.login),
-    path('verify',views.verify),
+    #
+    #path('verify',views.verify),
     path('modifyPwd',views.modify_password),
     path('modifyAddress',views.modify_address),
     path('modifyBirthday',views.modify_birthday),
@@ -21,5 +22,5 @@ urlpatterns = [
     path('getNickname', views.get_nickname),
     path('getProfile', views.get_profile_path),
     path('getSignature', views.get_signature),
-    path('getblog', views.get_blogs),
+    path('getBlog', views.get_blogs),
 ]
