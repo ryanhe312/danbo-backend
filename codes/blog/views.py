@@ -30,3 +30,28 @@ def release_blog(request):
     #return render(request,'releaseBlog.html')
     return HttpResponse(json.dumps(content))
 
+def get_blogs(request):
+    # 获取用户发布过的所有博客
+    # Arguments:
+    #     request: It should contains {"username":<str>}
+    # Return:
+    #     An HttpResponse which contains {"error_code":<int>, "message":<str>,"data":<dict>}
+    #     Here data is a dictionary, its key is the release time(str) of the blog, and its value is a tuple (content,a list of  picture paths)
+    content = {}
+    data = {}
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        if User.objects.filter(username=username).exists()==False:
+            content = {"error_code":441,"message":"用户名不存在","data":None}
+        else:
+            user = User.objects.get(username=username)
+            blogs = Blog.objects.filter(user_id = user.id)
+            for b in blogs:
+                pictures = Picture.objects.filter(blog=b)
+                picture_paths = []
+                for pic in pictures:
+                    picture_paths.append(pic.image)
+                data[str(b.release_time)] = (b.content,picture_paths)
+            content = {"error_code": 200, "message": "获取博客成功", "data": data}
+    return HttpResponse(json.dumps(content))
+
