@@ -5,7 +5,6 @@ urlpatterns = [
     path('register',views.resgister),
     path('sendRegisterCode',views.send_veri_code_register),
     path("sendLoginCode",views.send_veri_code_login),
-    path('verify',views.send_veri_code_register),
     path('login',views.login),
     path('modifyPwd',views.modify_password),
     path('modifyAddress',views.modify_address),
