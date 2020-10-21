@@ -50,8 +50,9 @@ def get_blogs(request):
                 pictures = Picture.objects.filter(blog=b)
                 picture_paths = []
                 for pic in pictures:
-                    picture_paths.append(pic.image)
+                    picture_paths.append(str(pic.image))
+                    # 测试注：暂时修改为只传文件路径，不加str无法应用json
                 data[str(b.release_time)] = (b.content,picture_paths)
             content = {"error_code": 200, "message": "获取博客成功", "data": data}
-    return HttpResponse(json.dumps(content))
+    return HttpResponse(json.dumps(content))#这里dumps有问题
 

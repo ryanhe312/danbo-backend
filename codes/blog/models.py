@@ -10,6 +10,7 @@ def direc_path(instance,filename):
     #     the path
     ext=filename.split('.').pop()
     res = 'blog_images/'+'bid'+str(instance.blog.id)+"_pid"+str(instance.num)+'.'+ext
+    # 测试注：是否有必要分用户文件夹、博客文件夹存储？
     return res
 
 #博客
