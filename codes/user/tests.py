@@ -410,7 +410,6 @@ class TestModifyPassword(TestCase):
         content = json.loads(response.content)
         return content['error_code']
     
-
 class TestInformation(TestCase):
     # 个人资料的修改测试（除头像）
     # python manage.py test user.tests.TestProfile
@@ -656,5 +655,43 @@ class TestInformation(TestCase):
     def get_response(self, url, request):
 
         response = self.client.post('/user/' + url, request)
+        content = json.loads(response.content)
+        return content['error_code'], content['data']
+
+class TestProfile(TestCase):
+
+    def setUp(self):
+
+        # 新建用户
+        password = make_password("xingshuhao990729")
+        User.objects.create(username = "xsh",password = password,email = "17307130121@fudan.edu.cn")
+
+        pring("--------------头像测试--------------")
+
+    def tearDown(self):
+
+        pring("--------------测试结束--------------")
+
+        return super().tearDown()
+
+    def test_profile(self):
+
+        request = {
+            'username': 'xsh',
+            }
+
+        request['profile_path'] = open('C:/Users/super/Desktop/美图/头像.jpg', 'rb')
+        error, data = self.run_test(request)
+        assert error == 200, "error code = %d"%(error)
+
+    def modify_profile(self, request):
+
+        response = self.client.post('user/modifyProfile', request)
+        content = json.loads(response.content)
+        return content['error_code'], content['data']
+
+    def get_profile(self, request):
+
+        response = self.client.post('user/modifyProfile', request)
         content = json.loads(response.content)
         return content['error_code'], content['data']

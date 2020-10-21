@@ -406,6 +406,7 @@ def get_profile_path(request):
     #     request: It should contains {"username":<str>}
     # Return:
     #     An HttpResponse which contains {"error_code":<int>, "message":<str>,"data":<str>}
+    # 测试注：无头像的时候需考虑默认头像
     content = {}
     if request.method == 'POST':
         username = request.POST.get('username')
