@@ -160,7 +160,9 @@ def send_veri_code_login(request):
         email = request.POST.get('email')
         if check_email(email) == False:
             content = {"error_code": 423, "message": "邮箱格式不正确", "data": None}
-        elif email != User.objects.filter(email=email):
+        elif (User.objects.filter(email=email).exists()) == False:
+            content = {"error_code": 422, "message": "该邮箱不是您注册时填写的邮箱", "data": None}
+        elif email != User.objects.get(email=email).email:
             content = {"error_code": 422, "message": "该邮箱不是您注册时填写的邮箱", "data": None}
         else:
             code = generate_veri_code(email)
@@ -192,14 +194,15 @@ def modify_password(request):
             content = {"error_code":422,"message":"两次输入的密码不一致","data":None}
         elif check_email(email)==False:
             content = {"error_code": 423, "message": "邮箱格式不正确", "data": None}
-        elif email != User.objects.filter(email=email):
+        elif email != User.objects.get(email=email).email:
             content = {"error_code": 422, "message": "该邮箱不是您注册时填写的邮箱", "data": None}
         elif check_veri_code(email,code)==False:
             content = {"error_code": 422, "message": "验证码不正确或已过期", "data": None}
         else:
             password=make_password(password)
-            User.objects.get(username=username).update(password=password)
+            User.objects.filter(username=username).update(password=password)
             content = {"error_code": 200, "message": "密码修改成功", "data": None}
+        print(content)
     return HttpResponse(json.dumps(content))
 
 def modify_signature(request):
@@ -217,7 +220,7 @@ def modify_signature(request):
         elif len(signature)>30:
             content = {"error_code": 433, "message": "签名长度应小于30个字符", "data": None}
         else:
-            User.objects.get(username=username).update(signature=signature)
+            User.objects.filter(username=username).update(signature=signature)
             content = {"error_code": 200, "message": "签名修改成功", "data": None}
     return HttpResponse(json.dumps(content))
 
@@ -236,7 +239,7 @@ def modify_nickname(request):
         elif len(nickname)>20:
             content = {"error_code": 433, "message": "昵称长度应小于20个字符", "data": None}
         else:
-            User.objects.get(username=username).update(nickname=nickname)
+            User.objects.filter(username=username).update(nickname=nickname)
             content = {"error_code": 200, "message": "昵称修改成功", "data": None}
     return HttpResponse(json.dumps(content))
 
@@ -255,7 +258,7 @@ def modify_address(request):
         elif len(address)>40:
             content = {"error_code": 433, "message": "地址长度应小于40个字符", "data": None}
         else:
-            User.objects.get(username=username).update(address=address)
+            User.objects.filter(username=username).update(address=address)
             content = {"error_code": 200, "message": "地址修改成功", "data": None}
     return HttpResponse(json.dumps(content))
 
@@ -263,7 +266,7 @@ def modify_birthday(request):
     # 用户修改生日
     # Arguments:
     #     request: It should contains {"username":<str>,"birthday":<str>}
-    #              The format of birthday is"YY-MM-DD"
+    #              The format of birthday is"YYYY-MM-DD" 
     # Return:
     #     An HttpResponse which contains {"error_code":<int>, "message":<str>,"data":None}
     content = {}
@@ -273,9 +276,9 @@ def modify_birthday(request):
         if User.objects.filter(username=username).exists()==False:
             content = {"error_code":431,"message":"用户名不存在","data":None}
         elif len(birthday)>40:
-            content = {"error_code": 433, "message": "昵称长度应小于40个字符", "data": None}
+            content = {"error_code": 433, "message": "生日长度应小于40个字符", "data": None}
         else:
-            User.objects.get(username=username).update(birthday=birthday)
+            User.objects.filter(username=username).update(birthday=birthday)
             content = {"error_code": 200, "message": "生日修改成功", "data": None}
     return HttpResponse(json.dumps(content))
 
@@ -295,7 +298,7 @@ def modify_gender(request):
         elif gender!='男' and gender!='女':
             content = {"error_code": 433, "message": "性别错误", "data": None}
         else:
-            User.objects.get(username=username).update(gender=gender)
+            User.objects.filter(username=username).update(gender=gender)
             content = {"error_code": 200, "message": "性别修改成功", "data": None}
     return HttpResponse(json.dumps(content))
 
@@ -312,7 +315,7 @@ def modify_profile(request):
         if User.objects.filter(username=username).exists()==False:
             content = {"error_code":431,"message":"用户名不存在","data":None}
         else:
-            User.objects.get(username=username).update(profile=profile_path)
+            User.objects.filter(username=username).update(profile=profile_path)
             content = {"error_code": 200, "message": "头像修改成功", "data": None}
     return HttpResponse(json.dumps(content))
 
@@ -361,7 +364,7 @@ def get_birthday(request):
             content = {"error_code":441,"message":"用户名不存在","data":None}
         else:
             birthday=User.objects.get(username=username).birthday
-            content = {"error_code": 200, "message": "获取生日成功", "data": birthday}
+            content = {"error_code": 200, "message": "获取生日成功", "data": str(birthday)}
     return HttpResponse(json.dumps(content))
 
 def get_gender(request):
