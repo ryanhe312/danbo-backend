@@ -425,7 +425,7 @@ class TestInformation(TestCase):
 
         password = make_password("xingshuhao990729")
         User.objects.create(username = "xsh",password = password,email = "17307130121@fudan.edu.cn",
-                            gender = "男", nickname = "x54", birthday = "1999-07-29", address = "山东省威海市", 
+                            gender = "男", birthday = "1999-07-29", address = "山东省威海市", 
                             signature = "奔向夜晚")
         return super().setUpClass()
 
@@ -457,7 +457,7 @@ class TestInformation(TestCase):
         error, data = self.get_response(get, request)
         print("用户昵称为", data)
         assert error == 200, "error code = %d"%(error)
-        assert data == "x54", "nickname = %s"%(data)
+        assert data == "游客", "nickname = %s"%(data)
 
         print("-----修改昵称：用户不存在-----")
         request = {'username':'szy', 'nickname':'x54_729'}
@@ -475,7 +475,7 @@ class TestInformation(TestCase):
         print("-----修改昵称：昵称为空-----")
         request['nickname'] = ""
         error, data = self.get_response(modify, request)
-        assert error == 200, "error code = %d"%(error)
+        assert error == 433, "error code = %d"%(error)
 
         print("-----修改昵称：成功-----")
         request['nickname'] = "x54_729"
@@ -658,8 +658,3 @@ class TestInformation(TestCase):
         response = self.client.post('/user/' + url, request)
         content = json.loads(response.content)
         return content['error_code'], content['data']
-
-#问题汇总：
-#1、birthday格式是YYYY-MM-DD
-#2、昵称可否为空？
-#3、性别是否有第三项“不便透露”？

@@ -236,8 +236,8 @@ def modify_nickname(request):
         nickname = request.POST.get('nickname')
         if User.objects.filter(username=username).exists()==False:
             content = {"error_code":431,"message":"用户名不存在","data":None}
-        elif len(nickname)>20:
-            content = {"error_code": 433, "message": "昵称长度应小于20个字符", "data": None}
+        elif len(nickname)>20 or len(nickname)==0:
+            content = {"error_code": 433, "message": "昵称长度应小于20个字符，且不能为空", "data": None}
         else:
             User.objects.filter(username=username).update(nickname=nickname)
             content = {"error_code": 200, "message": "昵称修改成功", "data": None}
@@ -286,7 +286,7 @@ def modify_gender(request):
     # 用户修改性别
     # Arguments:
     #     request: It should contains {"username":<str>,"gender":<str>}
-    #              gender has a limited value to '男' or '女'
+    #              gender has a limited value to '男' or '女' or '保密'
     # Return:
     #     An HttpResponse which contains {"error_code":<int>, "message":<str>,"data":None}
     content = {}
@@ -295,7 +295,7 @@ def modify_gender(request):
         gender = request.POST.get('gender')
         if User.objects.filter(username=username).exists()==False:
             content = {"error_code":431,"message":"用户名不存在","data":None}
-        elif gender!='男' and gender!='女':
+        elif gender!='男' and gender!='女' and gender != '保密':
             content = {"error_code": 433, "message": "性别错误", "data": None}
         else:
             User.objects.filter(username=username).update(gender=gender)

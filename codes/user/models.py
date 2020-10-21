@@ -22,7 +22,7 @@ class User(models.Model):
     profile = models.ImageField(upload_to=direc_path,blank=True,null=True)      #头像路径
     signature = models.CharField(max_length=30,default="这个人很懒，什么都没留下",null=True,blank=True)  #签名
     birthday = models.DateField(null=True,blank=True)     #生日
-    gender = models.CharField(max_length=1,null=True,blank=True)      #性别
+    gender = models.CharField(max_length=1,null=True,blank=True,default="保密")      #性别
     address = models.CharField(max_length=40,null=True,blank=True,default="地址未填写")   #地址
 
 #验证码
