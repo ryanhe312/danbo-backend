@@ -52,7 +52,10 @@ def get_blogs(request):
                 for pic in pictures:
                     picture_paths.append(str(pic.image))
                     # 测试注：暂时修改为只传文件路径，不加str无法应用json
-                data[b.release_time.strftime("%Y-%m-%m %H:%M:%S")] = (b.content,picture_paths)
+                data[b.release_time.strftime("%Y-%m-%m %H:%M:%S")] = {
+                    'content':b.content,
+                    'pictures':picture_paths
+                  }
             content = {"error_code": 200, "message": "获取博客成功", "data": data}
     return HttpResponse(json.dumps(content))#这里dumps有问题
 
