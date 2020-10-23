@@ -20,7 +20,7 @@
 
 * 运行指令
 
-  python3 manage.py makemigrations
+  python3 manage.py makemigrations app1 app2 ...
 
   python3 manage.py migrate
 
