@@ -1,6 +1,6 @@
 from django.shortcuts import render,HttpResponse
 from django.contrib.auth.hashers import make_password, check_password
-from user.models import  User,VerificationCode
+from user.models import  User,VerificationCode,Profile
 from blog.models import Blog,Picture
 from django.core.mail import send_mail
 import re
@@ -311,11 +311,13 @@ def modify_profile(request):
     content = {}
     if request.method == 'POST':
         username = request.POST.get('username')
-        profile_path = request.POST.get('profile_path')
+        profile  = request.FILES.get('profile')
         if User.objects.filter(username=username).exists()==False:
             content = {"error_code":431,"message":"用户名不存在","data":None}
         else:
-            User.objects.filter(username=username).update(profile=profile_path)
+            user = User.objects.get(username=username)
+            Profile.objects.filter(user=user).delete()
+            Profile.objects.create(user=user,image=profile)
             content = {"error_code": 200, "message": "头像修改成功", "data": None}
     return HttpResponse(json.dumps(content))
 
@@ -413,7 +415,12 @@ def get_profile_path(request):
         if User.objects.filter(username=username).exists()==False:
             content = {"error_code":441,"message":"用户名不存在","data":None}
         else:
-            profile_path=User.objects.get(username=username).profile
+            user = User.objects.get(username=username)
+            if Profile.objects.filter(user=user).exists()==False:
+                profile_path = 'default_path'
+            else:
+                profile = Profile.objects.get(user=user)
+                profile_path = str(profile.image)
             content = {"error_code": 200, "message": "获取头像路径成功", "data": profile_path}
     return HttpResponse(json.dumps(content))
 
