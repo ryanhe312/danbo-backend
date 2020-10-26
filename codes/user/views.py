@@ -73,6 +73,7 @@ def resgister(request):
     #     request: It should contains {"username":<str>, "password":<str>,"r_password":<str>, "email":<str>,"code":<str>}
     # Return:
     #     An HttpResponse which contains {"error_code":<int>, "message":<str>,"data":None}
+    #User.objects.all().delete()
     content={}
     if request.method == 'POST':
         username = request.POST.get('username')
@@ -161,9 +162,7 @@ def send_veri_code_login(request):
         if check_email(email) == False:
             content = {"error_code": 423, "message": "邮箱格式不正确", "data": None}
         elif (User.objects.filter(email=email).exists()) == False:
-            content = {"error_code": 422, "message": "该邮箱不是您注册时填写的邮箱", "data": None}
-        elif email != User.objects.get(email=email).email:
-            content = {"error_code": 422, "message": "该邮箱不是您注册时填写的邮箱", "data": None}
+            content = {"error_code": 421, "message": "该邮箱未注册", "data": None}
         else:
             code = generate_veri_code(email)
             subject = "蛋博找回密码"
@@ -194,7 +193,7 @@ def modify_password(request):
             content = {"error_code":422,"message":"两次输入的密码不一致","data":None}
         elif check_email(email)==False:
             content = {"error_code": 423, "message": "邮箱格式不正确", "data": None}
-        elif email != User.objects.get(email=email).email:
+        elif email != User.objects.get(username=username).email:
             content = {"error_code": 422, "message": "该邮箱不是您注册时填写的邮箱", "data": None}
         elif check_veri_code(email,code)==False:
             content = {"error_code": 422, "message": "验证码不正确或已过期", "data": None}
@@ -305,7 +304,7 @@ def modify_gender(request):
 def modify_profile(request):
     # 用户修改头像
     # Arguments:
-    #     request: It should contains {"username":<str>,"profile_path":<str> }
+    #     request: It should contains {"username":<str>,"profile":<file> }
     # Return:
     #     An HttpResponse which contains {"error_code":<int>, "message":<str>,"data":None}
     content = {}
@@ -408,7 +407,6 @@ def get_profile_path(request):
     #     request: It should contains {"username":<str>}
     # Return:
     #     An HttpResponse which contains {"error_code":<int>, "message":<str>,"data":<str>}
-    # 测试注：无头像的时候需考虑默认头像
     content = {}
     if request.method == 'POST':
         username = request.POST.get('username')
