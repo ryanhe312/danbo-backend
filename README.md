@@ -12,14 +12,15 @@
 
 ## 安装
 
-* 安装python：版本在3.6及以上
-* 安装django：版本在2.2及以上（建议3.0），pip3 install django==3.0
+* 安装python
+* 安装django：pip3 install django==3.1.2
+* 安装Pillow：pip3 install Pillow
 
 ## 使用
 
 * 运行指令
 
-  python3 manage.py makemigrations
+  python3 manage.py makemigrations app1 app2 ...
 
   python3 manage.py migrate
 
