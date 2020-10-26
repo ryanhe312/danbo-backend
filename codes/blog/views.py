@@ -21,6 +21,12 @@ def release_blog(request):
 
         if  User.objects.filter(username=username).exists()==False:
             content = {"error_code":431,"message":"用户名不存在","data":None}
+        elif len(content) > 256:
+            content = {"error_code":433, "message":"正文内容不能超过256字", "data":None}
+        elif len(pictures) > 9:
+            content = {"error_code":433, "message":"图片最多只能上传9张", "data":None}
+        elif len(content) == 0 and len(pictures) == 0:
+            content = {"error_code":433, "message":"博客内容不能为空", "data":None}
         else:
             user = User.objects.get(username=username)
             blog=Blog.objects.create(user=user,content=content)
