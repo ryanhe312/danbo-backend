@@ -17,7 +17,7 @@ def direc_path(instance,filename):
 class Blog(models.Model):
     user = models.ForeignKey('user.User',on_delete=models.CASCADE,related_name='blogs')     #发布博客的用户
     release_time = models.DateTimeField(auto_now_add=True)             #发布时间
-    content = models.TextField()        #文本内容
+    content = models.TextField(max_length=260)        #文本内容
 
 #图片
 class Picture(models.Model):
