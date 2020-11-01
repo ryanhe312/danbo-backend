@@ -10,6 +10,21 @@ import json
 
 # Create your views here.
 
+
+def get_login_user(request):
+    # 获取当前登录用户
+    # Arguments:
+    #     request
+    # Return:
+    #     None if cookie not exist or target user not exist
+    #     user object if the target user exists
+    username = request.COOKIES.get('username')
+    if not username or not User.objects.filter(username=username).exists():
+        return None
+    else:
+        return User.objects.get(username=username)
+
+
 def check_password2(password):
     # 检查密码是否合法
     # Arguments:
@@ -130,7 +145,7 @@ def send_veri_code_register(request):
     return HttpResponse(json.dumps(content))
 
 def login(request):
-    # 用户登录
+    # 用户登录，若成功，设置cookie,存活时间为6小时
     # Arguments:
     #     request: It should contains {"username":<str>, "password":<str>}
     # Return:
@@ -145,10 +160,33 @@ def login(request):
             key = User.objects.get(username=username).password
             if check_password(password,key) == False:
                 content = {"error_code": 412, "message": "密码不正确", "data": None}
+            elif get_login_user(request) is None:
+                content = {"error_code": 413, "message": "已登录，请先退出", "data": None}
             else:
                 content = {"error_code": 200, "message": "登录成功", "data": None}
+                response = HttpResponse(json.dumps(content))
+                response.set_cookie('username',username,6*3600)
+                return response
     return HttpResponse(json.dumps(content))
     #return render(request,'login.html')
+
+def logout(request):
+    # 用户退出登录，若成功，清除cookie值
+    # Arguments:
+    #     request: no data in the body
+    # Return:
+    #     An HttpResponse which contains {"error_code":<int>, "message":<str>,"data":None}
+    content = {}
+    if request.method == 'POST':
+        user = get_login_user(request)
+        if user is None:
+            content = {"error_code": 431, "message": "当前未登录", "data": None}
+        else:
+            content = {"err_code": 0, "message": "成功退出登录", "data": None}
+            response = HttpResponse(json.dumps(content))
+            response.delete_cookie("cookie_value")
+            return response
+    return HttpResponse(json.dumps(content))
 
 def send_veri_code_login(request):
     # 向用户邮箱发送登录时找回密码的验证码
@@ -180,28 +218,26 @@ def modify_password(request):
     #     An HttpResponse which contains {"error_code":<int>, "message":<str>,"data":None}
     content = {}
     if request.method == 'POST':
-        username = request.POST.get('username')
-        password = request.POST.get('password')
-        r_password= request.POST.get('r_password')
-        email = request.POST.get('email')
-        code = request.POST.get('code')
-        if User.objects.filter(username=username).exists()==False:
-            content = {"error_code":421,"message":"用户名不存在","data":None}
-        elif check_password2(password)==False:
-            content = {"error_code": 423, "message": "密码只能由大小写字母，数字组成，且长度应在6-20", "data": None}
-        elif password != r_password:
-            content = {"error_code":422,"message":"两次输入的密码不一致","data":None}
-        elif check_email(email)==False:
-            content = {"error_code": 423, "message": "邮箱格式不正确", "data": None}
-        elif email != User.objects.get(username=username).email:
-            content = {"error_code": 422, "message": "该邮箱不是您注册时填写的邮箱", "data": None}
-        elif check_veri_code(email,code)==False:
-            content = {"error_code": 422, "message": "验证码不正确或已过期", "data": None}
+        user = get_login_user(request)
+        if user is None:
+            content = {"error_code": 421, "message": "用户名不存在或当前未登录", "data": None}
         else:
-            password=make_password(password)
-            User.objects.filter(username=username).update(password=password)
-            content = {"error_code": 200, "message": "密码修改成功", "data": None}
-        print(content)
+            password = request.POST.get('password')
+            r_password= request.POST.get('r_password')
+            code = request.POST.get('code')
+            email = user.email
+            if check_password2(password)==False:
+                content = {"error_code": 423, "message": "密码只能由大小写字母，数字组成，且长度应在6-20", "data": None}
+            elif password != r_password:
+                content = {"error_code":422,"message":"两次输入的密码不一致","data":None}
+
+            elif check_veri_code(email,code)==False:
+                content = {"error_code": 422, "message": "验证码不正确或已过期", "data": None}
+            else:
+                password=make_password(password)
+                user.update(password=password)
+                content = {"error_code": 200, "message": "密码修改成功", "data": None}
+            print(content)
     return HttpResponse(json.dumps(content))
 
 def modify_signature(request):
@@ -212,15 +248,17 @@ def modify_signature(request):
     #     An HttpResponse which contains {"error_code":<int>, "message":<str>,"data":None}
     content = {}
     if request.method == 'POST':
-        username = request.POST.get('username')
-        signature = request.POST.get('signature')
-        if User.objects.filter(username=username).exists()==False:
-            content = {"error_code":431,"message":"用户名不存在","data":None}
-        elif len(signature)>30:
-            content = {"error_code": 433, "message": "签名长度应小于30个字符", "data": None}
+        user = get_login_user(request)
+        if user is None:
+            content = {"error_code": 431, "message": "用户名不存在或当前未登录", "data": None}
         else:
-            User.objects.filter(username=username).update(signature=signature)
-            content = {"error_code": 200, "message": "签名修改成功", "data": None}
+            signature = request.POST.get('signature')
+            if len(signature)>30:
+                content = {"error_code": 433, "message": "签名长度应小于30个字符", "data": None}
+            else:
+                user.update(signature=signature)
+                content = {"error_code": 200, "message": "签名修改成功", "data": None}
+>>>>>>> Stashed changes
     return HttpResponse(json.dumps(content))
 
 def modify_nickname(request):
@@ -231,15 +269,16 @@ def modify_nickname(request):
     #     An HttpResponse which contains {"error_code":<int>, "message":<str>,"data":None}
     content = {}
     if request.method == 'POST':
-        username = request.POST.get('username')
-        nickname = request.POST.get('nickname')
-        if User.objects.filter(username=username).exists()==False:
-            content = {"error_code":431,"message":"用户名不存在","data":None}
-        elif len(nickname)>20 or len(nickname)==0:
-            content = {"error_code": 433, "message": "昵称长度应小于20个字符，且不能为空", "data": None}
+        user = get_login_user(request)
+        if user is None:
+            content = {"error_code": 431, "message": "用户名不存在或当前未登录", "data": None}
         else:
-            User.objects.filter(username=username).update(nickname=nickname)
-            content = {"error_code": 200, "message": "昵称修改成功", "data": None}
+            nickname = request.POST.get('nickname')
+            if len(nickname)>20 or len(nickname)==0:
+                content = {"error_code": 433, "message": "昵称长度应小于20个字符，且不能为空", "data": None}
+            else:
+                user.update(nickname=nickname)
+                content = {"error_code": 200, "message": "昵称修改成功", "data": None}
     return HttpResponse(json.dumps(content))
 
 def modify_address(request):
@@ -250,15 +289,16 @@ def modify_address(request):
     #     An HttpResponse which contains {"error_code":<int>, "message":<str>,"data":None}
     content = {}
     if request.method == 'POST':
-        username = request.POST.get('username')
-        address = request.POST.get('address')
-        if User.objects.filter(username=username).exists()==False:
-            content = {"error_code":431,"message":"用户名不存在","data":None}
-        elif len(address)>40:
-            content = {"error_code": 433, "message": "地址长度应小于40个字符", "data": None}
+        user = get_login_user(request)
+        if user is None:
+            content = {"error_code": 431, "message": "用户名不存在或当前未登录", "data": None}
         else:
-            User.objects.filter(username=username).update(address=address)
-            content = {"error_code": 200, "message": "地址修改成功", "data": None}
+            address = request.POST.get('address')
+            if len(address)>40:
+                content = {"error_code": 433, "message": "地址长度应小于40个字符", "data": None}
+            else:
+                user.update(address=address)
+                content = {"error_code": 200, "message": "地址修改成功", "data": None}
     return HttpResponse(json.dumps(content))
 
 def modify_birthday(request):
@@ -270,15 +310,16 @@ def modify_birthday(request):
     #     An HttpResponse which contains {"error_code":<int>, "message":<str>,"data":None}
     content = {}
     if request.method == 'POST':
-        username = request.POST.get('username')
-        birthday = request.POST.get('birthday')
-        if User.objects.filter(username=username).exists()==False:
-            content = {"error_code":431,"message":"用户名不存在","data":None}
-        elif len(birthday)>40:
-            content = {"error_code": 433, "message": "生日长度应小于40个字符", "data": None}
+        user = get_login_user(request)
+        if user is None:
+            content = {"error_code": 431, "message": "用户名不存在或当前未登录", "data": None}
         else:
-            User.objects.filter(username=username).update(birthday=birthday)
-            content = {"error_code": 200, "message": "生日修改成功", "data": None}
+            birthday = request.POST.get('birthday')
+            if len(birthday)>40:
+                content = {"error_code": 433, "message": "生日长度应小于40个字符", "data": None}
+            else:
+                user.update(birthday=birthday)
+                content = {"error_code": 200, "message": "生日修改成功", "data": None}
     return HttpResponse(json.dumps(content))
 
 def modify_gender(request):
@@ -290,15 +331,16 @@ def modify_gender(request):
     #     An HttpResponse which contains {"error_code":<int>, "message":<str>,"data":None}
     content = {}
     if request.method == 'POST':
-        username = request.POST.get('username')
-        gender = request.POST.get('gender')
-        if User.objects.filter(username=username).exists()==False:
-            content = {"error_code":431,"message":"用户名不存在","data":None}
-        elif gender!='男' and gender!='女' and gender != '保密':
-            content = {"error_code": 433, "message": "性别错误", "data": None}
+        user = get_login_user(request)
+        if user is None:
+            content = {"error_code": 431, "message": "用户名不存在或当前未登录", "data": None}
         else:
-            User.objects.filter(username=username).update(gender=gender)
-            content = {"error_code": 200, "message": "性别修改成功", "data": None}
+            gender = request.POST.get('gender')
+            if gender!='男' and gender!='女' and gender != '保密':
+                content = {"error_code": 433, "message": "性别错误", "data": None}
+            else:
+                user.update(gender=gender)
+                content = {"error_code": 200, "message": "性别修改成功", "data": None}
     return HttpResponse(json.dumps(content))
 
 def modify_profile(request):
@@ -309,12 +351,11 @@ def modify_profile(request):
     #     An HttpResponse which contains {"error_code":<int>, "message":<str>,"data":None}
     content = {}
     if request.method == 'POST':
-        username = request.POST.get('username')
-        profile  = request.FILES.get('profile')
-        if User.objects.filter(username=username).exists()==False:
-            content = {"error_code":431,"message":"用户名不存在","data":None}
+        user = get_login_user(request)
+        if user is None:
+            content = {"error_code": 431, "message": "用户名不存在或当前未登录", "data": None}
         else:
-            user = User.objects.get(username=username)
+            profile  = request.FILES.get('profile')
             Profile.objects.filter(user=user).delete()
             Profile.objects.create(user=user,image=profile)
             content = {"error_code": 200, "message": "头像修改成功", "data": None}
@@ -328,12 +369,11 @@ def get_nickname(request):
     #     An HttpResponse which contains {"error_code":<int>, "message":<str>,"data":<str>}
     content = {}
     if request.method == 'POST':
-        username = request.POST.get('username')
-        if User.objects.filter(username=username).exists()==False:
-            content = {"error_code":441,"message":"用户名不存在","data":None}
+        user = get_login_user(request)
+        if user is None:
+            content = {"error_code": 441, "message": "用户名不存在或当前未登录", "data": None}
         else:
-            nickname=User.objects.get(username=username).nickname
-            content = {"error_code": 200, "message": "获取昵称成功", "data": nickname}
+            content = {"error_code": 200, "message": "获取昵称成功", "data": user.nickname}
     return HttpResponse(json.dumps(content))
 
 def get_signature(request):
@@ -344,12 +384,11 @@ def get_signature(request):
     #     An HttpResponse which contains {"error_code":<int>, "message":<str>,"data":<str>}
     content = {}
     if request.method == 'POST':
-        username = request.POST.get('username')
-        if User.objects.filter(username=username).exists()==False:
-            content = {"error_code":441,"message":"用户名不存在","data":None}
+        user = get_login_user(request)
+        if user is None:
+            content = {"error_code": 441, "message": "用户名不存在或当前未登录", "data": None}
         else:
-            signature=User.objects.get(username=username).signature
-            content = {"error_code": 200, "message": "获取签名成功", "data": signature}
+            content = {"error_code": 200, "message": "获取签名成功", "data": user.signature}
     return HttpResponse(json.dumps(content))
 
 def get_birthday(request):
@@ -360,12 +399,11 @@ def get_birthday(request):
     #     An HttpResponse which contains {"error_code":<int>, "message":<str>,"data":<str>}
     content = {}
     if request.method == 'POST':
-        username = request.POST.get('username')
-        if User.objects.filter(username=username).exists()==False:
-            content = {"error_code":441,"message":"用户名不存在","data":None}
+        user = get_login_user(request)
+        if user is None:
+            content = {"error_code": 441, "message": "用户名不存在或当前未登录", "data": None}
         else:
-            birthday=User.objects.get(username=username).birthday
-            content = {"error_code": 200, "message": "获取生日成功", "data": str(birthday)}
+            content = {"error_code": 200, "message": "获取生日成功", "data": user.birthday}
     return HttpResponse(json.dumps(content))
 
 def get_gender(request):
@@ -376,12 +414,11 @@ def get_gender(request):
     #     An HttpResponse which contains {"error_code":<int>, "message":<str>,"data":<str>}
     content = {}
     if request.method == 'POST':
-        username = request.POST.get('username')
-        if User.objects.filter(username=username).exists()==False:
-            content = {"error_code":441,"message":"用户名不存在","data":None}
+        user = get_login_user(request)
+        if user is None:
+            content = {"error_code": 441, "message": "用户名不存在或当前未登录", "data": None}
         else:
-            gender=User.objects.get(username=username).gender
-            content = {"error_code": 200, "message": "获取性别成功", "data": gender}
+            content = {"error_code": 200, "message": "获取性别成功", "data": user.gender}
     return HttpResponse(json.dumps(content))
 
 def get_address(request):
@@ -392,12 +429,11 @@ def get_address(request):
     #     An HttpResponse which contains {"error_code":<int>, "message":<str>,"data":<str>}
     content = {}
     if request.method == 'POST':
-        username = request.POST.get('username')
-        if User.objects.filter(username=username).exists()==False:
-            content = {"error_code":441,"message":"用户名不存在","data":None}
+        user = get_login_user(request)
+        if user is None:
+            content = {"error_code": 441, "message": "用户名不存在或当前未登录", "data": None}
         else:
-            address=User.objects.get(username=username).address
-            content = {"error_code": 200, "message": "获取地址成功", "data": address}
+            content = {"error_code": 200, "message": "获取地址成功", "data": user.address}
     return HttpResponse(json.dumps(content))
 
 def get_profile_path(request):
@@ -409,11 +445,10 @@ def get_profile_path(request):
     #     An HttpResponse which contains {"error_code":<int>, "message":<str>,"data":<str>}
     content = {}
     if request.method == 'POST':
-        username = request.POST.get('username')
-        if User.objects.filter(username=username).exists()==False:
-            content = {"error_code":441,"message":"用户名不存在","data":None}
+        user = get_login_user(request)
+        if user is None:
+            content = {"error_code": 441, "message": "用户名不存在或当前未登录", "data": None}
         else:
-            user = User.objects.get(username=username)
             if Profile.objects.filter(user=user).exists()==False:
                 profile_path = 'default_path'
             else:
