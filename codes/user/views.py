@@ -180,9 +180,9 @@ def logout(request):
     if request.method == 'POST':
         user = get_login_user(request)
         if user is None:
-            content = {"error_code": 431, "message": "当前未登录", "data": None}
+            content = {"error_code": 411, "message": "当前未登录", "data": None}
         else:
-            content = {"err_code": 0, "message": "成功退出登录", "data": None}
+            content = {"err_code": 200, "message": "成功退出登录", "data": None}
             response = HttpResponse(json.dumps(content))
             response.delete_cookie("cookie_value")
             return response
@@ -218,32 +218,34 @@ def modify_password(request):
     #     An HttpResponse which contains {"error_code":<int>, "message":<str>,"data":None}
     content = {}
     if request.method == 'POST':
-        user = get_login_user(request)
-        if user is None:
-            content = {"error_code": 421, "message": "用户名不存在或当前未登录", "data": None}
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        r_password= request.POST.get('r_password')
+        email = request.POST.get('email')
+        code = request.POST.get('code')
+        if User.objects.filter(username=username).exists()==False:
+            content = {"error_code":421,"message":"用户名不存在","data":None}
+        elif check_password2(password)==False:
+            content = {"error_code": 423, "message": "密码只能由大小写字母，数字组成，且长度应在6-20", "data": None}
+        elif password != r_password:
+            content = {"error_code":422,"message":"两次输入的密码不一致","data":None}
+        elif check_email(email)==False:
+            content = {"error_code": 423, "message": "邮箱格式不正确", "data": None}
+        elif email != User.objects.get(username=username).email:
+            content = {"error_code": 422, "message": "该邮箱不是您注册时填写的邮箱", "data": None}
+        elif check_veri_code(email,code)==False:
+            content = {"error_code": 422, "message": "验证码不正确或已过期", "data": None}
         else:
-            password = request.POST.get('password')
-            r_password= request.POST.get('r_password')
-            code = request.POST.get('code')
-            email = user.email
-            if check_password2(password)==False:
-                content = {"error_code": 423, "message": "密码只能由大小写字母，数字组成，且长度应在6-20", "data": None}
-            elif password != r_password:
-                content = {"error_code":422,"message":"两次输入的密码不一致","data":None}
-
-            elif check_veri_code(email,code)==False:
-                content = {"error_code": 422, "message": "验证码不正确或已过期", "data": None}
-            else:
-                password=make_password(password)
-                user.update(password=password)
-                content = {"error_code": 200, "message": "密码修改成功", "data": None}
-            print(content)
+            password=make_password(password)
+            User.objects.filter(username=username).update(password=password)
+            content = {"error_code": 200, "message": "密码修改成功", "data": None}
+        print(content)
     return HttpResponse(json.dumps(content))
 
 def modify_signature(request):
     # 用户修改签名
     # Arguments:
-    #     request: It should contains {"username":<str>,"signature":<str>}
+    #     request: It should contains {"signature":<str>} need Cookie
     # Return:
     #     An HttpResponse which contains {"error_code":<int>, "message":<str>,"data":None}
     content = {}
@@ -258,13 +260,12 @@ def modify_signature(request):
             else:
                 user.update(signature=signature)
                 content = {"error_code": 200, "message": "签名修改成功", "data": None}
->>>>>>> Stashed changes
     return HttpResponse(json.dumps(content))
 
 def modify_nickname(request):
     # 用户修改昵称
     # Arguments:
-    #     request: It should contains {"username":<str>,"nickname":<str>}
+    #     request: It should contains {"nickname":<str>} need Cookie
     # Return:
     #     An HttpResponse which contains {"error_code":<int>, "message":<str>,"data":None}
     content = {}
@@ -284,7 +285,7 @@ def modify_nickname(request):
 def modify_address(request):
     # 用户修改地址
     # Arguments:
-    #     request: It should contains {"username":<str>,"address":<str>}
+    #     request: It should contains {"address":<str>} need Cookie
     # Return:
     #     An HttpResponse which contains {"error_code":<int>, "message":<str>,"data":None}
     content = {}
@@ -304,8 +305,8 @@ def modify_address(request):
 def modify_birthday(request):
     # 用户修改生日
     # Arguments:
-    #     request: It should contains {"username":<str>,"birthday":<str>}
-    #              The format of birthday is"YYYY-MM-DD" 
+    #     request: It should contains {"birthday":<str>} need Cookie
+    #              The format of birthday is"YY-MM-DD"
     # Return:
     #     An HttpResponse which contains {"error_code":<int>, "message":<str>,"data":None}
     content = {}
@@ -325,7 +326,7 @@ def modify_birthday(request):
 def modify_gender(request):
     # 用户修改性别
     # Arguments:
-    #     request: It should contains {"username":<str>,"gender":<str>}
+    #     request: It should contains {"gender":<str>} need Cookie
     #              gender has a limited value to '男' or '女' or '保密'
     # Return:
     #     An HttpResponse which contains {"error_code":<int>, "message":<str>,"data":None}
@@ -346,7 +347,7 @@ def modify_gender(request):
 def modify_profile(request):
     # 用户修改头像
     # Arguments:
-    #     request: It should contains {"username":<str>,"profile":<file> }
+    #     request: It should contains {"profile":<file> } need Cookie
     # Return:
     #     An HttpResponse which contains {"error_code":<int>, "message":<str>,"data":None}
     content = {}
@@ -364,7 +365,7 @@ def modify_profile(request):
 def get_nickname(request):
     # 获取用户昵称
     # Arguments:
-    #     request: It should contains {"username":<str>}
+    #     request: need Cookie
     # Return:
     #     An HttpResponse which contains {"error_code":<int>, "message":<str>,"data":<str>}
     content = {}
@@ -379,7 +380,7 @@ def get_nickname(request):
 def get_signature(request):
     # 获取用户签名
     # Arguments:
-    #     request: It should contains {"username":<str>}
+    #     request: need Cookie
     # Return:
     #     An HttpResponse which contains {"error_code":<int>, "message":<str>,"data":<str>}
     content = {}
@@ -394,7 +395,7 @@ def get_signature(request):
 def get_birthday(request):
     # 获取用户生日
     # Arguments:
-    #     request: It should contains {"username":<str>}
+    #     request: need Cookie
     # Return:
     #     An HttpResponse which contains {"error_code":<int>, "message":<str>,"data":<str>}
     content = {}
@@ -409,7 +410,7 @@ def get_birthday(request):
 def get_gender(request):
     # 获取用户性别
     # Arguments:
-    #     request: It should contains {"username":<str>}
+    #     request: need Cookie
     # Return:
     #     An HttpResponse which contains {"error_code":<int>, "message":<str>,"data":<str>}
     content = {}
@@ -424,7 +425,7 @@ def get_gender(request):
 def get_address(request):
     # 获取用户地址
     # Arguments:
-    #     request: It should contains {"username":<str>}
+    #     request: need Cookie
     # Return:
     #     An HttpResponse which contains {"error_code":<int>, "message":<str>,"data":<str>}
     content = {}
@@ -440,7 +441,7 @@ def get_profile_path(request):
     # 获取用户头像路径，注意这里获取的是相对路径，绝对路径为：MEDIA_ROOT + 相对路径
     # MEDIA_ROOT 定义见setting.py
     # Arguments:
-    #     request: It should contains {"username":<str>}
+    #     request: need Cookie
     # Return:
     #     An HttpResponse which contains {"error_code":<int>, "message":<str>,"data":<str>}
     content = {}

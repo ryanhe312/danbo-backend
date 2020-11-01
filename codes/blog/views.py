@@ -22,7 +22,7 @@ def get_login_user(request):
 def release_blog(request):
     # 发布博客
     # Arguments:
-    #     request: It should contains {"username":<str>, "content":<str>,"pictures":<list>}
+    #     request: It should contains {"content":<str>,"pictures":<file>,"pictures":<file>...} need Cookie
     # Return:
     #     An HttpResponse which contains {"error_code":<int>, "message":<str>,"data":None}
 
@@ -51,7 +51,7 @@ def release_blog(request):
 def get_blogs(request):
     # 获取用户发布过的所有博客
     # Arguments:
-    #     request: It should contains {"username":<str>}
+    #     request: need Cookie
     # Return:
     #     An HttpResponse which contains {"error_code":<int>, "message":<str>,"data":<dict>}
     #     Here data is a dictionary, its key is the release time(str) of the blog, and its value is a tuple (content,a list of  picture paths)
