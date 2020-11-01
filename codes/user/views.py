@@ -160,8 +160,6 @@ def login(request):
             key = User.objects.get(username=username).password
             if check_password(password,key) == False:
                 content = {"error_code": 412, "message": "密码不正确", "data": None}
-            elif get_login_user(request) is None:
-                content = {"error_code": 413, "message": "已登录，请先退出", "data": None}
             else:
                 content = {"error_code": 200, "message": "登录成功", "data": None}
                 response = HttpResponse(json.dumps(content))
@@ -184,7 +182,7 @@ def logout(request):
         else:
             content = {"err_code": 200, "message": "成功退出登录", "data": None}
             response = HttpResponse(json.dumps(content))
-            response.delete_cookie("cookie_value")
+            response.delete_cookie("username")
             return response
     return HttpResponse(json.dumps(content))
 
