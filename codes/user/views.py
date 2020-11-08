@@ -456,4 +456,16 @@ def get_profile_path(request):
             content = {"error_code": 200, "message": "获取头像路径成功", "data": profile_path}
     return HttpResponse(json.dumps(content))
 
-
+def get_username(request):
+    ''' 查询当前登录用户，仅用于前端处理
+    Return:
+        An HttpRepsonse, which contains {"err_code":<int>, "message":<str>, "data":user or None}
+    '''
+    content = {}
+    if request.method == 'POST':
+        user = get_login_user(request)
+        if user is None:
+            content = {"error_code": 441, "message": "用户名不存在或当前未登录", "data": None}
+        else:
+            content = {"error_code": 200, "message": "获取用户名成功", "data": user.username}
+    return HttpResponse(json.dumps(content))
