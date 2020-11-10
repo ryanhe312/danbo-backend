@@ -16,7 +16,7 @@ name表示键值名，type表示键值类型，包括text文本和file文件两�
 
 
 
-2. 除登陆、注册、找回密码功能外，所有请求必须包含一个Cookie，这个Cookie在登陆时加入，在登出时删除。
+2. 登出、修改个人信息、发博博客和获取用户名必须包含一个Cookie，这个Cookie在登陆时加入，在登出时删除。
 
 
 
@@ -400,7 +400,9 @@ signature:text
 
 请求方式：POST
 
-请求内容：需要Cookie
+请求内容：
+
+username:text
 
  
 
@@ -418,7 +420,9 @@ signature:text
 
 请求方式：POST
 
-请求内容：需要Cookie
+请求内容：
+
+username:text
 
  
 
@@ -436,7 +440,9 @@ signature:text
 
 请求方式：POST
 
-请求内容：需要Cookie
+请求内容：
+
+username:text
 
  
 
@@ -454,7 +460,9 @@ signature:text
 
 请求方式：POST
 
-请求内容：需要Cookie
+请求内容：
+
+username:text
 
  
 
@@ -476,7 +484,9 @@ signature:text
 
 请求方式：POST
 
-请求内容：需要Cookie
+请求内容：
+
+username:text
 
  
 
@@ -494,7 +504,9 @@ signature:text
 
 请求方式：POST
 
-请求内容：需要Cookie
+请求内容：
+
+username:text
 
  
 
@@ -552,7 +564,9 @@ You may attach several pictures in one post.
 
 请求方式：POST
 
-请求内容：需要Cookie
+请求内容：
+
+username:text
 
  
 

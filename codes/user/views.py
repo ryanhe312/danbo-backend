@@ -363,90 +363,95 @@ def modify_profile(request):
 def get_nickname(request):
     # 获取用户昵称
     # Arguments:
-    #     request: need Cookie
+    #     request: It should contains {"username":<str>}
     # Return:
     #     An HttpResponse which contains {"error_code":<int>, "message":<str>,"data":<str>}
     content = {}
     if request.method == 'POST':
-        user = get_login_user(request)
-        if user is None:
-            content = {"error_code": 441, "message": "用户名不存在或当前未登录", "data": None}
+        username = request.POST.get('username')
+        if User.objects.filter(username=username).exists()==False:
+            content = {"error_code":441,"message":"用户名不存在","data":None}
         else:
-            content = {"error_code": 200, "message": "获取昵称成功", "data": user.nickname}
+            nickname=User.objects.get(username=username).nickname
+            content = {"error_code": 200, "message": "获取昵称成功", "data": nickname}
     return HttpResponse(json.dumps(content))
 
 def get_signature(request):
     # 获取用户签名
     # Arguments:
-    #     request: need Cookie
+    #     request: It should contains {"username":<str>}
     # Return:
     #     An HttpResponse which contains {"error_code":<int>, "message":<str>,"data":<str>}
     content = {}
     if request.method == 'POST':
-        user = get_login_user(request)
-        if user is None:
-            content = {"error_code": 441, "message": "用户名不存在或当前未登录", "data": None}
+        username = request.POST.get('username')
+        if User.objects.filter(username=username).exists()==False:
+            content = {"error_code":441,"message":"用户名不存在","data":None}
         else:
-            content = {"error_code": 200, "message": "获取签名成功", "data": user.signature}
+            signature=User.objects.get(username=username).signature
+            content = {"error_code": 200, "message": "获取签名成功", "data": signature}
     return HttpResponse(json.dumps(content))
 
 def get_birthday(request):
     # 获取用户生日
     # Arguments:
-    #     request: need Cookie
+    #     request: It should contains {"username":<str>}
     # Return:
     #     An HttpResponse which contains {"error_code":<int>, "message":<str>,"data":<str>}
     content = {}
     if request.method == 'POST':
-        user = get_login_user(request)
-        if user is None:
-            content = {"error_code": 441, "message": "用户名不存在或当前未登录", "data": None}
+        username = request.POST.get('username')
+        if User.objects.filter(username=username).exists()==False:
+            content = {"error_code":441,"message":"用户名不存在","data":None}
         else:
-            content = {"error_code": 200, "message": "获取生日成功", "data": user.birthday}
+            birthday=User.objects.get(username=username).birthday
+            content = {"error_code": 200, "message": "获取生日成功", "data": str(birthday)}
     return HttpResponse(json.dumps(content))
 
 def get_gender(request):
     # 获取用户性别
     # Arguments:
-    #     request: need Cookie
+    #     request: It should contains {"username":<str>}
     # Return:
     #     An HttpResponse which contains {"error_code":<int>, "message":<str>,"data":<str>}
     content = {}
     if request.method == 'POST':
-        user = get_login_user(request)
-        if user is None:
-            content = {"error_code": 441, "message": "用户名不存在或当前未登录", "data": None}
+        username = request.POST.get('username')
+        if User.objects.filter(username=username).exists()==False:
+            content = {"error_code":441,"message":"用户名不存在","data":None}
         else:
-            content = {"error_code": 200, "message": "获取性别成功", "data": user.gender}
+            gender=User.objects.get(username=username).gender
+            content = {"error_code": 200, "message": "获取性别成功", "data": gender}
     return HttpResponse(json.dumps(content))
 
 def get_address(request):
     # 获取用户地址
     # Arguments:
-    #     request: need Cookie
+    #     request: It should contains {"username":<str>}
     # Return:
     #     An HttpResponse which contains {"error_code":<int>, "message":<str>,"data":<str>}
     content = {}
     if request.method == 'POST':
-        user = get_login_user(request)
-        if user is None:
-            content = {"error_code": 441, "message": "用户名不存在或当前未登录", "data": None}
+        username = request.POST.get('username')
+        if User.objects.filter(username=username).exists()==False:
+            content = {"error_code":441,"message":"用户名不存在","data":None}
         else:
-            content = {"error_code": 200, "message": "获取地址成功", "data": user.address}
+            address=User.objects.get(username=username).address
+            content = {"error_code": 200, "message": "获取地址成功", "data": address}
     return HttpResponse(json.dumps(content))
 
 def get_profile_path(request):
     # 获取用户头像路径，注意这里获取的是相对路径，绝对路径为：MEDIA_ROOT + 相对路径
     # MEDIA_ROOT 定义见setting.py
     # Arguments:
-    #     request: need Cookie
+    #     request: It should contains {"username":<str>}
     # Return:
     #     An HttpResponse which contains {"error_code":<int>, "message":<str>,"data":<str>}
     content = {}
     if request.method == 'POST':
-        user = get_login_user(request)
-        if user is None:
-            content = {"error_code": 441, "message": "用户名不存在或当前未登录", "data": None}
+        username = request.POST.get('username')
+        if User.objects.filter(username=username).exists()==False:
+            content = {"error_code":441,"message":"用户名不存在","data":None}
         else:
             if Profile.objects.filter(user=user).exists()==False:
                 profile_path = 'default_path'
