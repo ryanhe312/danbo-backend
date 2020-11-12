@@ -61,7 +61,8 @@ def get_blogs(request):
                 data[b.release_time.strftime("%Y-%m-%m %H:%M:%S")] = {
                     'content':b.content,
                     'pictures':picture_paths
-                  }
+                  }#测试的时候这里的时间都是一样的，所以只能获取到最后一条……
             content = {"error_code": 200, "message": "获取博客成功", "data": data}
+    print(content)
     return HttpResponse(json.dumps(content))#这里dumps有问题
 

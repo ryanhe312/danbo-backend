@@ -6,6 +6,7 @@ from django.core.mail import send_mail
 import re
 import random
 import time
+import time
 import json
 
 # Create your views here.
