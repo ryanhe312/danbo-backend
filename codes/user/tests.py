@@ -33,12 +33,8 @@ class TestRegister(TestCase):
 
         self.user = {}
 
-        i = random.randint(1, 20)
-        self.user['username'] = ''.join(random.sample(string.ascii_letters + string.digits + "!@#$%^&*()?><{}[]", i))
-        #self['username'] = "xsh729"
-
-        i = random.randint(6, 20)
-        self.user['password'] = ''.join(random.sample(string.ascii_letters + string.digits, i))
+        self.user['username'] = "xsh"
+        self.user['password'] = "xsh1234568790"
         self.user['r_password'] = self.user['password']
 
         self.user['email'] = "17307130121@fudan.edu.cn"
@@ -54,7 +50,7 @@ class TestRegister(TestCase):
         #用户名过长
         print("--------测试长用户名--------")
         i = random.randint(21, 30)
-        self.user['username'] = ''.join(random.sample(string.ascii_letters + string.digits + "!@#$%^&*()?><{}[]", i))
+        self.user['username'] = "xsh12345678901234567890"
         error = self.run_test()
         assert error == 403, "error code = %d"%(error)
 
@@ -64,28 +60,28 @@ class TestRegister(TestCase):
         # 密码过短
         i = random.randint(0, 5)
         print("--------测试短密码--------")
-        self.user['password'] = ''.join(random.sample(string.ascii_letters + string.digits, i))
+        self.user['password'] = "xx12"
         error = self.run_test()
         assert error == 403, "error code = %d"%(error)
         # 密码过长
         print("--------测试长密码--------")
         i = random.randint(21, 30)
-        self.user['password'] = ''.join(random.sample(string.ascii_letters + string.digits, i))
+        self.user['password'] = "xx123456789123456789123"
         error = self.run_test()
         assert error == 403, "error code = %d"%(error)
         # 密码含有违规字符
         print("--------测试违规密码--------")
         i = random.randint(1, 30)
-        self.user['password'] = ''.join(random.sample(string.ascii_letters + string.digits, i - 1) + random.sample("!@#$%^&*()?><{}[]", 1))
+        self.user['password'] = "xingshuhao!@fudan"
         error = self.run_test()
         assert error == 403, "error code = %d"%(error)
 
-    def test_illigal_rpassword(self):
+    def test_illegal_rpassword(self):
         # 不合法重输入密码
 
         print("--------测试不合法的重输入密码--------")
         # 去掉开头字符
-        self.user['r_password'] = self.user['password'][1: ]
+        self.user['r_password'] = "xsh123456789"
         error = self.run_test()
         assert error == 402, "error code = %d"%(error)
 
@@ -111,7 +107,7 @@ class TestRegister(TestCase):
         self.user['email'] = "17307130121fudan.edu.cn"
         error = self.run_test()
         assert error == 403, "error code = %d"%(error)
-        self.user['email'] = "17307130121@fudan.cn"
+        self.user['email'] = "whxiaohao@163.com"
         error = self.run_test()
         assert error == 403, "error code = %d"%(error)
         self.user['email'] = "17307130121@fudan.comcn"
@@ -159,6 +155,7 @@ class TestRegister(TestCase):
         # 发送邮件
         response = self.client.post('/user/sendRegisterCode', {'email' : email})
         content = json.loads(response.content)
+        print(content['message'])
         if content['error_code'] != 200:
             return content['error_code']
 
@@ -187,6 +184,7 @@ class TestRegister(TestCase):
         response = self.client.post('/user/register', self.user)
 
         content = json.loads(response.content)
+        print(content['message'])
         return content['error_code']
 
 class TestLogin(TestCase):
@@ -198,6 +196,7 @@ class TestLogin(TestCase):
     def setUpClass(cls):
 
         # 新建两个用户
+        User.objects.all().delete()
         password = make_password("xingshuhao990729")
         User.objects.create(username = "xsh",password = password,email = "17307130121@fudan.edu.cn")
         password = make_password("sheeeep")
@@ -222,7 +221,7 @@ class TestLogin(TestCase):
 
         print("登录信息为：", self.login)
         print("--------用户不存在--------")
-        self.login['username'] = "xsh729"
+        self.login['username'] = "xsh999"
         error = self.run_test()
         assert error == 411, "error code = %d"%(error)
 
@@ -261,6 +260,7 @@ class TestModifyPassword(TestCase):
     def setUp(self):
 
         # 新建用户
+        User.objects.all().delete()
         password = make_password("xingshuhao990729")
         User.objects.create(username = "xsh",password = password,email = "17307130121@fudan.edu.cn")
         password = make_password("sheeeep")
@@ -284,7 +284,7 @@ class TestModifyPassword(TestCase):
         # 用户不存在
 
         print("--------测试不存在用户--------")
-        self.modify['username'] = "xxxsh"
+        self.modify['username'] = "xsh999"
         error = self.run_test()
         assert error == 421, "error code = %d"%(error)
 
@@ -310,7 +310,7 @@ class TestModifyPassword(TestCase):
         error = self.run_test()
         assert error == 423, "error code = %d"%(error)
 
-    def test_illigal_rpassword(self):
+    def test_illegal_rpassword(self):
         # 不合法重输入密码
 
         print("--------测试不合法的重输入密码--------")
@@ -329,7 +329,7 @@ class TestModifyPassword(TestCase):
         # 发送验证码的邮箱和注册时的邮箱不同
 
         print("--------测试错误电子邮件--------")
-        self.modify['email'] = "17307130118@fudan.edu.cn"
+        self.modify['email'] = "17307130056@fudan.edu.cn"
         error = self.run_test()
         assert error == 422, "error code = %d"%(error)
 
@@ -421,7 +421,7 @@ class TestInformation(TestCase):
 
     @classmethod
     def setUpClass(cls):
-
+        User.objects.all().delete()
         password = make_password("xingshuhao990729")
         User.objects.create(username = "xsh",password = password,email = "17307130121@fudan.edu.cn",
                             gender = "男", birthday = "1999-07-29", address = "山东省威海市", 
@@ -658,40 +658,41 @@ class TestInformation(TestCase):
         content = json.loads(response.content)
         return content['error_code'], content['data']
 
-class TestProfile(TestCase):
+#class TestProfile(TestCase):
 
-    def setUp(self):
+#    def setUp(self):
 
-        # 新建用户
-        password = make_password("xingshuhao990729")
-        User.objects.create(username = "xsh",password = password,email = "17307130121@fudan.edu.cn")
+#        # 新建用户
+#        User.objects.all().delete()
+#        password = make_password("xingshuhao990729")
+#        User.objects.create(username = "xsh",password = password,email = "17307130121@fudan.edu.cn")
 
-        pring("--------------头像测试--------------")
+#        print("--------------头像测试--------------")
 
-    def tearDown(self):
+#    def tearDown(self):
 
-        pring("--------------测试结束--------------")
+#        print("--------------测试结束--------------")
 
-        return super().tearDown()
+#        return super().tearDown()
 
-    def test_profile(self):
+#    def test_profile(self):
 
-        request = {
-            'username': 'xsh',
-            }
+#        request = {
+#            'username': 'xsh',
+#            }
 
-        request['profile_path'] = open('C:/Users/super/Desktop/美图/头像.jpg', 'rb')
-        error, data = self.run_test(request)
-        assert error == 200, "error code = %d"%(error)
+#        request['profile_path'] = open('C:/Users/super/Desktop/美图/头像.jpg', 'rb')
+#        error, data = self.run_test(request)
+#        assert error == 200, "error code = %d"%(error)
 
-    def modify_profile(self, request):
+#    def modify_profile(self, request):
 
-        response = self.client.post('user/modifyProfile', request)
-        content = json.loads(response.content)
-        return content['error_code'], content['data']
+#        response = self.client.post('user/modifyProfile', request)
+#        content = json.loads(response.content)
+#        return content['error_code'], content['data']
 
-    def get_profile(self, request):
+#    def get_profile(self, request):
 
-        response = self.client.post('user/modifyProfile', request)
-        content = json.loads(response.content)
-        return content['error_code'], content['data']
+#        response = self.client.post('user/modifyProfile', request)
+#        content = json.loads(response.content)
+#        return content['error_code'], content['data']
