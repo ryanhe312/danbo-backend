@@ -23,7 +23,6 @@ class User(models.Model):
     birthday = models.DateField(null=True,blank=True)     #生日
     gender = models.CharField(max_length=1,null=True,blank=True,default="保密")      #性别
     address = models.CharField(max_length=40,null=True,blank=True,default="地址未填写")   #地址
-
 #验证码
 class VerificationCode(models.Model):
     email =  models.CharField(max_length=40,unique='True')      #邮箱
@@ -34,3 +33,11 @@ class VerificationCode(models.Model):
 class Profile(models.Model):
     user = models.ForeignKey('user.User',on_delete=models.CASCADE,related_name='profile')      #头像所属的用户
     image = models.ImageField(upload_to=direc_path)     #头像路径
+
+#关注
+class Follow(models.Model):
+    to_user = models.ForeignKey('user.User',on_delete=models.CASCADE,related_name='to_user')            #关注者
+    from_user = models.ForeignKey('user.User',on_delete=models.CASCADE,related_name='from_user')        #关注对象
+
+    class Meta:
+        unique_together = ("from_user", "to_user")      #组合键值

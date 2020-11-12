@@ -1,6 +1,6 @@
 from django.shortcuts import render,HttpResponse
 from django.contrib.auth.hashers import make_password, check_password
-from user.models import  User,VerificationCode,Profile
+from user.models import  User,VerificationCode,Profile,Follow
 from blog.models import Blog,Picture
 from django.core.mail import send_mail
 import re
@@ -453,6 +453,7 @@ def get_profile_path(request):
         if User.objects.filter(username=username).exists()==False:
             content = {"error_code":441,"message":"用户名不存在","data":None}
         else:
+            user = User.objects.get(username=username)
             if Profile.objects.filter(user=user).exists()==False:
                 profile_path = 'default_path'
             else:
@@ -474,3 +475,123 @@ def get_username(request):
         else:
             content = {"error_code": 200, "message": "获取用户名成功", "data": user.username}
     return HttpResponse(json.dumps(content))
+
+
+def get_followees(request):
+    # 获取指定用户所关注的用户名列表
+    # Arguments:
+    #     request: It should contains {"username":<str>}
+    # Return:
+    #     An HttpResponse which contains {"error_code":<int>, "message":<str>,"data":<list>}
+    content = {}
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        if User.objects.filter(username=username).exists() == False:
+            content = {"error_code": 441, "message": "用户名不存在", "data": None}
+        else:
+            user = User.objects.get(username=username)
+            followships = Follow.objects.filter(from_user = user)
+            followee_names = []
+            for followship in followships :
+                followee_names.append(followship.to_user.username)
+
+            content = {"error_code": 200, "message": "获取关注列表成功", "data": followee_names}
+    return HttpResponse(json.dumps(content))
+
+def get_followers(request):
+    # 获取关注指定用户的用户名列表
+    # Arguments:
+    #     request: It should contains {"username":<str>}
+    # Return:
+    #     An HttpResponse which contains {"error_code":<int>, "message":<str>,"data":<list>}
+    content = {}
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        if User.objects.filter(username=username).exists() == False:
+            content = {"error_code": 441, "message": "用户名不存在", "data": None}
+        else:
+            user = User.objects.get(username=username)
+            followships = Follow.objects.filter(to_user = user)
+            follower_names = []
+            for followship in followships :
+                follower_names.append(followship.from_user.username)
+
+            content = {"error_code": 200, "message": "获取关注者列表成功", "data": follower_names}
+    return HttpResponse(json.dumps(content))
+
+
+def follow(request):
+    # 关注操作
+    # Arguments:
+    #     request: It should contains {"to_username":<str>} need Cookie
+    # Return:
+    #     An HttpResponse which contains {"error_code":<int>, "message":<str>,"data":None}
+    content = {}
+    if request.method == 'POST':
+        from_user = get_login_user(request)
+        if from_user is None:
+            content = {"error_code": 431, "message": "用户名不存在或当前未登录", "data": None}
+        else:
+            to_username = request.POST.get('to_username')
+            if User.objects.filter(username=to_username).exists() == False:
+                content = {"error_code": 441, "message": "关注对象不存在", "data": None}
+            else:
+                to_user = User.objects.get(username =to_username )
+                if Follow.objects.filter(from_user=from_user,to_user=to_user).exist():
+                    content = {"error_code": 442, "message": "请不要重复关注", "data": None}
+                else:
+                    Follow.objects.create(from_user=from_user,to_user=to_user)
+                    content = {"error_code": 200, "message": "关注成功", "data": None}
+    return HttpResponse(json.dumps(content))
+
+def cancel_follow(request):
+    # 取消关注
+    # Arguments:
+    #     request: It should contains {"to_username":<str>} need Cookie
+    # Return:
+    #     An HttpResponse which contains {"error_code":<int>, "message":<str>,"data":None}
+    content = {}
+    if request.method == 'POST':
+        from_user = get_login_user(request)
+        if from_user is None:
+            content = {"error_code": 431, "message": "用户名不存在或当前未登录", "data": None}
+        else:
+            to_username = request.POST.get('to_username')
+            if User.objects.filter(username=to_username).exists() == False:
+                content = {"error_code": 441, "message": "取消关注的对象不存在", "data": None}
+            else:
+                to_user = User.objects.get(username =to_username )
+                if Follow.objects.filter(from_user=from_user,to_user=to_user).exist() is False:
+                    content = {"error_code": 443, "message": "当前还未关注", "data": None}
+                else:
+                    Follow.objects.get(from_user=from_user,to_user=to_user).delete()
+                    content = {"error_code": 200, "message": "取消关注成功", "data": None}
+    return HttpResponse(json.dumps(content))
+
+
+def test_add(request):
+    # 仅供后端测试使用
+
+    # username = 'Sun'
+    # password = '123456'
+    # email ='134533@163.com'
+    #
+    # User.objects.create(username=username, password=password, email=email)
+
+    # user1 = User.objects.get(username= 'Wang')
+    # user2 = User.objects.get(username='Sun')
+    # user3 = User.objects.get(username='Zhao')
+    # Follow.objects.create(from_user=user1,to_user=user2)
+    # Follow.objects.create(from_user=user1, to_user=user3)
+    #
+    # user1 = User.objects.get(username='Wang')
+    # followers = Follow.objects.filter(from_user=user1)
+    # for follow in followers:
+    #     print(follow.to_user.username)
+
+    # from_user = User.objects.get(username='Wang')
+    # to_user = User.objects.get(username='Sun')
+    # if Follow.objects.filter(from_user=from_user, to_user=to_user).exists() :
+    #     print(from_user.username)
+
+    return HttpResponse('1')

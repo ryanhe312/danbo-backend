@@ -21,4 +21,5 @@ urlpatterns = [
     path('getProfile', views.get_profile_path),
     path('getSignature', views.get_signature),
     path('getUsername', views.get_username),
+    path('test',views.test_add),
 ]
