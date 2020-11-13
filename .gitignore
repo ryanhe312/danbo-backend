@@ -4,3 +4,5 @@ db.sqlite3
 migrations/
 statics/
 .DS_Store
+.idea
+.scannerwork
