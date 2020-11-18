@@ -209,7 +209,7 @@ def send_veri_code_login(request):
     return HttpResponse(json.dumps(content))
 
 def modify_password(request):
-    # 用户修改密码
+    # 未登录状态用户修改密码
     # Arguments:
     #     request: It should contains {"username":<str>, "password":<str>,"r_password":<str>, "email":<str>, "code":<str>}
     # Return:
@@ -238,6 +238,37 @@ def modify_password(request):
             User.objects.filter(username=username).update(password=password)
             content = {"error_code": 200, "message": "密码修改成功", "data": None}
         print(content)
+    return HttpResponse(json.dumps(content))
+
+def modify_password_login(request):
+    # 登录状态用户修改密码
+    # Arguments:
+    #     request: It should contains {"password":<str>,"r_password":<str>, "code":<str>} need Cookie
+    # Return:
+    #     An HttpResponse which contains {"error_code":<int>, "message":<str>,"data":None}
+    content = {}
+    if request.method == 'POST':
+        user = get_login_user(request)
+        if user is None:
+            content = {"error_code": 431, "message": "用户名不存在或当前未登录", "data": None}
+        else:
+            password = request.POST.get('password')
+            r_password = request.POST.get('r_password')
+            code = request.POST.get('code')
+            email = user.email
+            if check_password2(password) == False:
+                content = {"error_code": 423, "message": "密码只能由大小写字母，数字组成，且长度应在6-20", "data": None}
+            elif password != r_password:
+                content = {"error_code": 422, "message": "两次输入的密码不一致", "data": None}
+            elif check_email(email) == False:
+                content = {"error_code": 423, "message": "邮箱格式不正确", "data": None}
+            elif check_veri_code(email, code) == False:
+                content = {"error_code": 422, "message": "验证码不正确或已过期", "data": None}
+            else:
+                password = make_password(password)
+                user.update(password=password)
+                content = {"error_code": 200, "message": "密码修改成功", "data": None}
+            print(content)
     return HttpResponse(json.dumps(content))
 
 def modify_signature(request):
@@ -476,6 +507,19 @@ def get_username(request):
             content = {"error_code": 200, "message": "获取用户名成功", "data": user.username}
     return HttpResponse(json.dumps(content))
 
+def get_email(request):
+    ''' 查询当前登录用户邮箱，仅用于前端处理
+    Return:
+        An HttpRepsonse, which contains {"err_code":<int>, "message":<str>, "data":email or None}
+    '''
+    content = {}
+    if request.method == 'POST':
+        user = get_login_user(request)
+        if user is None:
+            content = {"error_code": 441, "message": "用户名不存在或当前未登录", "data": None}
+        else:
+            content = {"error_code": 200, "message": "获取邮箱成功", "data": user.email}
+    return HttpResponse(json.dumps(content))
 
 def get_followees(request):
     # 获取指定用户所关注的用户名列表
