@@ -613,31 +613,3 @@ def cancel_follow(request):
                     Follow.objects.get(from_user=from_user,to_user=to_user).delete()
                     content = {"error_code": 200, "message": "取消关注成功", "data": None}
     return HttpResponse(json.dumps(content))
-
-
-def test_add(request):
-    # 仅供后端测试使用
-
-    # username = 'Sun'
-    # password = '123456'
-    # email ='134533@163.com'
-    #
-    # User.objects.create(username=username, password=password, email=email)
-
-    # user1 = User.objects.get(username= 'Wang')
-    # user2 = User.objects.get(username='Sun')
-    # user3 = User.objects.get(username='Zhao')
-    # Follow.objects.create(from_user=user1,to_user=user2)
-    # Follow.objects.create(from_user=user1, to_user=user3)
-    #
-    # user1 = User.objects.get(username='Wang')
-    # followers = Follow.objects.filter(from_user=user1)
-    # for follow in followers:
-    #     print(follow.to_user.username)
-
-    # from_user = User.objects.get(username='Wang')
-    # to_user = User.objects.get(username='Sun')
-    # if Follow.objects.filter(from_user=from_user, to_user=to_user).exists() :
-    #     print(from_user.username)
-
-    return HttpResponse('1')

@@ -11,5 +11,4 @@ urlpatterns = [
     path('get_comments',views.get_comments),
     path('get_likes',views.get_likes),
     path('refreshBlogs',views.refresh_blogs),
-    path('test',views.test),
 ]
