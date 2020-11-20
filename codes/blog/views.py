@@ -44,7 +44,7 @@ def release_blog(request):
                 for i,picture in enumerate(pictures):
                     Picture.objects.create(blog=blog,image=picture,num=i)
                 content = {"error_code": 200, "message": "博客发布成功", "data": None}
-    #return render(request,'releaseBlog.html')
+    
     return HttpResponse(json.dumps(content))
 
 def refresh_blogs(request):
@@ -148,7 +148,7 @@ def get_likes(request):
     #     An HttpResponse which contains {"error_code":<int>, "message":<str>,"data":<list>>}
     content={}
     if request.method == 'POST':
-        blog_id = request.get('blog_id')
+        blog_id = int(request.get('blog_id'))
         if Blog.objects.filter(id=blog_id).exists() is False:
             content = {"error_code": 442, "message": "目标博客不存在", "data": None}
         else:
@@ -158,7 +158,7 @@ def get_likes(request):
             for lk in likes:
                 like_usernames.append(lk.user)
             content = {"error_code": 200, "message": "点赞获取成功", "data": like_usernames}
-    #return render(request,'releaseBlog.html')
+    
     return HttpResponse(json.dumps(content))
 
 # 获取指定博客的评论
@@ -170,7 +170,7 @@ def get_comments(request):
     #     An HttpResponse which contains {"error_code":<int>, "message":<str>,"data":<list>>}
     content={}
     if request.method == 'POST':
-        blog_id = request.get('blog_id')
+        blog_id = int(request.get('blog_id'))
         if Blog.objects.filter(id=blog_id).exists() is False:
             content = {"error_code": 442, "message": "目标博客不存在", "data": None}
         else:
@@ -181,7 +181,7 @@ def get_comments(request):
                 comment_ids.append(cmt.id)
             comment_ids.sort(reverse=False)
             content = {"error_code": 200, "message": "评论获取成功", "data": comment_ids}
-    #return render(request,'releaseBlog.html')
+    
     return HttpResponse(json.dumps(content))
 
 # 转发博客
@@ -202,14 +202,14 @@ def repost_blog(request):
             if len(text) > 100:
                 content = {"error_code":433, "message":"转发正文内容不能超过100字", "data":None}
             else:
-                blog_id = request.get('blog_id')
+                blog_id = int(request.get('blog_id'))
                 if Blog.objects.filter(id=blog_id).exists() is False:
                     content = {"error_code": 442, "message": "转发的目标博客不存在", "data": None}
                 else:
                     Blog.objects.create(user=user,content=text,type='repost',repost_link=blog_id )
 
                     content = {"error_code": 200, "message": "博客转发成功", "data": None}
-    #return render(request,'releaseBlog.html')
+    
     return HttpResponse(json.dumps(content))
 
 #评论

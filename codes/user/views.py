@@ -250,18 +250,15 @@ def modify_password_login(request):
     if request.method == 'POST':
         user = get_login_user(request)
         if user is None:
-            content = {"error_code": 431, "message": "用户名不存在或当前未登录", "data": None}
+            content = {"error_code": 421, "message": "用户名不存在或当前未登录", "data": None}
         else:
             password = request.POST.get('password')
             r_password = request.POST.get('r_password')
             code = request.POST.get('code')
-            email = user.email
             if check_password2(password) == False:
                 content = {"error_code": 423, "message": "密码只能由大小写字母，数字组成，且长度应在6-20", "data": None}
             elif password != r_password:
                 content = {"error_code": 422, "message": "两次输入的密码不一致", "data": None}
-            elif check_email(email) == False:
-                content = {"error_code": 423, "message": "邮箱格式不正确", "data": None}
             elif check_veri_code(email, code) == False:
                 content = {"error_code": 422, "message": "验证码不正确或已过期", "data": None}
             else:
@@ -580,11 +577,11 @@ def follow(request):
         else:
             to_username = request.POST.get('to_username')
             if User.objects.filter(username=to_username).exists() == False:
-                content = {"error_code": 441, "message": "关注对象不存在", "data": None}
+                content = {"error_code": 431, "message": "关注对象不存在", "data": None}
             else:
                 to_user = User.objects.get(username =to_username )
                 if Follow.objects.filter(from_user=from_user,to_user=to_user).exist():
-                    content = {"error_code": 442, "message": "请不要重复关注", "data": None}
+                    content = {"error_code": 432, "message": "请不要重复关注", "data": None}
                 else:
                     Follow.objects.create(from_user=from_user,to_user=to_user)
                     content = {"error_code": 200, "message": "关注成功", "data": None}
@@ -604,11 +601,11 @@ def cancel_follow(request):
         else:
             to_username = request.POST.get('to_username')
             if User.objects.filter(username=to_username).exists() == False:
-                content = {"error_code": 441, "message": "取消关注的对象不存在", "data": None}
+                content = {"error_code": 431, "message": "取消关注的对象不存在", "data": None}
             else:
                 to_user = User.objects.get(username =to_username )
                 if Follow.objects.filter(from_user=from_user,to_user=to_user).exist() is False:
-                    content = {"error_code": 443, "message": "当前还未关注", "data": None}
+                    content = {"error_code": 433, "message": "当前还未关注", "data": None}
                 else:
                     Follow.objects.get(from_user=from_user,to_user=to_user).delete()
                     content = {"error_code": 200, "message": "取消关注成功", "data": None}
