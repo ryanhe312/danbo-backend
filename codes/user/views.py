@@ -508,17 +508,19 @@ def get_username(request):
     return HttpResponse(json.dumps(content))
 
 def get_email(request):
-    ''' 查询当前登录用户邮箱，仅用于前端处理
-    Return:
-        An HttpRepsonse, which contains {"err_code":<int>, "message":<str>, "data":email or None}
-    '''
+    # 获取用户邮箱
+    # Arguments:
+    #     request: It should contains {"username":<str>}
+    # Return:
+    #     An HttpResponse which contains {"error_code":<int>, "message":<str>,"data":<str>}
     content = {}
     if request.method == 'POST':
-        user = get_login_user(request)
-        if user is None:
-            content = {"error_code": 441, "message": "用户名不存在或当前未登录", "data": None}
+        username = request.POST.get('username')
+        if User.objects.filter(username=username).exists()==False:
+            content = {"error_code":441,"message":"用户名不存在","data":None}
         else:
-            content = {"error_code": 200, "message": "获取邮箱成功", "data": user.email}
+            email=User.objects.get(username=username).email
+            content = {"error_code": 200, "message": "获取邮箱成功", "data": email}
     return HttpResponse(json.dumps(content))
 
 def get_followees(request):
