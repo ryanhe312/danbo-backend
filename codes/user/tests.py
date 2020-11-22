@@ -412,21 +412,22 @@ class TestInformation(TestCase):
     # python manage.py test user.tests.TestProfile
     # modify_nickname...完成
     # modify_gender...完成
-    # modify_birthday...
-    # modify_address...
-    # modify_signature...
+    # modify_birthday...完成
+    # modify_address...完成
+    # modify_signature...完成
 
     @classmethod
     def setUpClass(cls):
         User.objects.all().delete()
         password = make_password("xingshuhao990729")
         User.objects.create(username = "xsh",password = password,email = "17307130121@fudan.edu.cn",
-                            gender = "男", birthday = "1999-07-29", address = "山东省威海市", 
+                            birthday = "1999-07-29", address = "山东省威海市", 
                             signature = "奔向夜晚")
         return super().setUpClass()
 
     def setUp(self):
 
+        self.client.cookies['username'] = "xsh"
         print("--------------开始个人资料测试--------------")
 
     def tearDown(self):
@@ -455,14 +456,8 @@ class TestInformation(TestCase):
         assert error == 200, "error code = %d"%(error)
         assert data == "游客", "nickname = %s"%(data)
 
-        print("-----修改昵称：用户不存在-----")
-        request = {'username':'szy', 'nickname':'x54_729'}
-        error, data = self.get_response(modify, request)
-        assert error == 431, "error code = %d"%(error)
-
         print("-----修改昵称：昵称过长-----")
         request = {
-            'username':'xsh', 
             "nickname":"测试昵称测试昵称测试昵称测试昵称测试昵称测试昵称"
             }
         error, data = self.get_response(modify, request)
@@ -474,6 +469,7 @@ class TestInformation(TestCase):
         assert error == 433, "error code = %d"%(error)
 
         print("-----修改昵称：成功-----")
+        request['username'] = "xsh"
         request['nickname'] = "x54_729"
         print("昵称修改为", request['nickname'])
         error, data = self.get_response(modify, request)
@@ -501,16 +497,10 @@ class TestInformation(TestCase):
         error, data = self.get_response(get, request)
         print("用户性别为", data)
         assert error == 200, "error code = %d"%(error)
-        assert data == "男", "gender = %s"%(data)
-
-        print("-----修改性别：用户不存在-----")
-        request = {'username':'szy', 'gender':'女'}
-        error, data = self.get_response(modify, request)
-        assert error == 431, "error code = %d"%(error)
+        assert data == "保密", "gender = %s"%(data)
 
         print("-----修改性别：性别错误-----")
         request = {
-            'username':'xsh', 
             'gender': "a"
             }
         error, data = self.get_response(modify, request)
@@ -546,14 +536,8 @@ class TestInformation(TestCase):
         assert error == 200, "error code = %d"%(error)
         assert data == "1999-07-29", "gender = %s"%(data)
 
-        print("-----修改生日：用户不存在-----")
-        request = {'username':'szy', 'birthday':'1972-07-02'}
-        error, data = self.get_response(modify, request)
-        assert error == 431, "error code = %d"%(error)
-
         print("-----修改生日：成功-----")
-        request['username'] = 'xsh'
-        request['birthday'] = '1972-07-02'
+        request = {'birthday': '1972-07-02'}
         print("生日修改为", request['birthday'])
         error, data = self.get_response(modify, request)
         assert error == 200, "error code = %d"%(error)
@@ -582,14 +566,8 @@ class TestInformation(TestCase):
         assert error == 200, "error code = %d"%(error)
         assert data == "山东省威海市", "address = %s"%(data)
 
-        print("-----修改地址：用户不存在-----")
-        request = {'username':'szy', 'address':'上海市虹口区'}
-        error, data = self.get_response(modify, request)
-        assert error == 431, "error code = %d"%(error)
-
         print("-----修改地址：地址过长-----")
         request = {
-            'username':'xsh', 
             'address': "测试地址测试地址测试地址测试地址测试地址测试地址测试地址测试地址测试地址测试地址测试地址"
             }
         error, data = self.get_response(modify, request)
@@ -625,14 +603,8 @@ class TestInformation(TestCase):
         assert error == 200, "error code = %d"%(error)
         assert data == "奔向夜晚", "signature = %s"%(data)
 
-        print("-----修改签名：用户不存在-----")
-        request = {'username':'szy', 'signature':'LEFT SIDE, RIGHT SIDE, YOU ARE KING.'}
-        error, data = self.get_response(modify, request)
-        assert error == 431, "error code = %d"%(error)
-
         print("-----修改签名：签名过长-----")
         request = {
-            'username':'xsh', 
             'signature': 'LEFT SIDE, RIGHT SIDE, YOU ARE KING.'
             }
         error, data = self.get_response(modify, request)
