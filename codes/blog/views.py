@@ -18,6 +18,31 @@ def get_login_user(request):
     else:
         return User.objects.get(username=username)
 
+def generate_blog_content(b):
+    contents = []
+    users = []
+    time = b.release_time.strftime("%Y-%m-%m %H:%M:%S")
+
+    while b.type == 'repost':
+        contents.append(b.content)
+        users.append(b.user.username)
+        b = Blog.objects.get(id=b.repost_link)  
+
+    pictures = Picture.objects.filter(blog=b)
+    picture_paths = []
+    for pic in pictures:
+        picture_paths.append(str(pic.image))
+
+    data = {
+        'time': time,
+        'origin_user': b.user.username,
+        'origin_content': b.content,
+        'users': users
+        'contents': contents
+        'pictures':picture_paths,
+    }
+
+    return data
 
 def release_blog(request):
     # 发布博客
@@ -62,40 +87,15 @@ def refresh_blogs(request):
             data = {}
             self_blogs = Blog.objects.filter(user=user)
             for b in self_blogs:
-                pictures = Picture.objects.filter(blog=b)
-                picture_paths = []
-                for pic in pictures:
-                    picture_paths.append(str(pic.image))
-                    # 测试注：暂时修改为只传文件路径，不加str无法应用json
-
-                data[b.release_time.strftime("%Y-%m-%m %H:%M:%S")] = {
-                    'username': user.username,
-                    'blog_id': b.id,
-                    'type': b.type,
-                    'content': b.content,
-                    'pictures': picture_paths,
-                    'repost_link': b.repost_link,
-                }
+                data[b.id] = generate_blog_content(b)
 
             followships = Follow.objects.filter(from_user = user)
             for followship in followships:
                 followee = followship.to_user
                 follow_blogs = Blog.objects.filter(user=followee)
                 for b in follow_blogs:
-                    pictures = Picture.objects.filter(blog=b)
-                    picture_paths = []
-                    for pic in pictures:
-                        picture_paths.append(str(pic.image))
-                        # 测试注：暂时修改为只传文件路径，不加str无法应用json
-                    #注 暂时不考虑用户和关注对象在同一时刻发布博客的情况
-                    data[b.release_time.strftime("%Y-%m-%m %H:%M:%S")] = {
-                        'username': followee.username,
-                        'blog_id': b.id,
-                        'type': b.type,
-                        'content': b.content,
-                        'pictures': picture_paths,
-                        'repost_link': b.repost_link,
-                    }
+                    data[b.id] = generate_blog_content(b)
+
             data = sorted(data.items(),key=lambda x:x[0],reverse=True)
             content = {"error_code": 200, "message": "获取博客成功", "data": data}
     return HttpResponse(json.dumps(content))
@@ -122,19 +122,8 @@ def get_blogs(request):
             user = User.objects.get(username=username)
             blogs = Blog.objects.filter(user = user)
             for b in blogs:
-                pictures = Picture.objects.filter(blog=b)
-                picture_paths = []
-                for pic in pictures:
-                    picture_paths.append(str(pic.image))
-                    # 测试注：暂时修改为只传文件路径，不加str无法应用json
+                data[b.id] = generate_blog_content(b)
 
-                data[b.release_time.strftime("%Y-%m-%m %H:%M:%S")] = {
-                    'blog_id':b.id,
-                    'type':b.type,
-                    'content':b.content,
-                    'pictures':picture_paths,
-                    'repost_link':b.repost_link,
-                  }
             data = sorted(data.items(), key=lambda x: x[0], reverse=True)
             content = {"error_code": 200, "message": "获取博客成功", "data": data}
     return HttpResponse(json.dumps(content))#这里dumps有问题
@@ -175,12 +164,17 @@ def get_comments(request):
             content = {"error_code": 442, "message": "目标博客不存在", "data": None}
         else:
             blog = Blog.objects.get(id=blog_id)
-            comment_ids = []
+            data = {}
             comments = Comment.objects.filter(blog=blog)
             for cmt in comments:
-                comment_ids.append(cmt.id)
-            comment_ids.sort(reverse=False)
-            content = {"error_code": 200, "message": "评论获取成功", "data": comment_ids}
+                data[cmt.id] = {
+                    'time': cmt.release_time.strftime("%Y-%m-%m %H:%M:%S"),
+                    'username': cmt.user.username,
+                    'blog_id':cmt.id,
+                    'content':cmt.content,
+                  }
+            data = sorted(data.items(), key=lambda x: x[0], reverse=True)
+            content = {"error_code": 200, "message": "评论获取成功", "data": data}
     
     return HttpResponse(json.dumps(content))
 

@@ -1,14 +1,15 @@
 # 蛋博Web API文档
 
-版本20201120.8
+版本20201122.9
 
-UPD：Sprint2 API加入，添加目录
+UPD：更改博客内容API
 
 ## 目录
 
 [一、简介](#一简介)
 
 [二、登陆API](#二登陆api)
+
 * [0.确认登陆](#0确认登陆)
 * [1.注册](#1注册)
 * [2.发送注册验证码](#2发送注册验证码)
@@ -93,6 +94,7 @@ name表示键值名，type表示键值类型，包括text文本和file文件两�
 
 5. 图像获取的是相对路径，绝对路径为：MEDIA_ROOT + 相对路径，MEDIA_ROOT = 127.0.0.1:8000/media/ 部署在不同服务器上时，请用真实IP地址和端口
 
+5. 本系统仅支持学邮注册，也即邮箱必须以@fudan.edu.cn结尾。
  
 
 ## 二、登陆API
@@ -868,8 +870,6 @@ blog_id:text
 
 
 
- 
-
 ### 7.获取用户博客
 
 获取某一用户发布过的所有博客
@@ -892,19 +892,25 @@ username:text
 
  
 
-Here data is a dictionary, its key is the release time(str) of the blog.
+这里 data 是一个词典结构, 键值是博客ID，已经按发布顺序逆序排序：
 
 
 ```python
-data[b.release_time.strftime("%Y-%m-%m %H:%M:%S")] = {
-    'username': user.username,
-    'blog_id': b.id,
-    'type': b.type,
-    'content': b.content,
-    'pictures': picture_paths,
-    'repost_link': b.repost_link,
+data[b.id] = {
+    'time': time,
+    'origin_user': b.user.username,
+    'origin_content': b.content,
+    'users': users
+    'contents': contents
+    'pictures':picture_paths,
 }
 ```
+
+users 含有各级转发的用户的用户名
+
+contents 含有各级转发的博客的内容
+
+pictures 是原博客的图片
 
 
 
@@ -944,4 +950,19 @@ blog_id:text
 
 {"error_code": 442, "message": "目标博客不存在", "data": None}
 
-{"error_code": 200, "message": "评论获取成功", "data": comment_ids}
+{"error_code": 200, "message": "评论获取成功", "data": data}
+
+
+
+这里 data 是一个词典结构, 键值是评论ID，已经按发布顺序逆序排序：
+
+
+```python
+data[cmt.id] = {
+    'time': time,
+    'username': cmt.user.username,
+    'blog_id':cmt.id,
+    'content':cmt.content,
+}
+```
+
