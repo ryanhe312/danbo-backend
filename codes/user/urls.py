@@ -21,10 +21,10 @@ urlpatterns = [
     path('getProfile', views.get_profile_path),
     path('getSignature', views.get_signature),
     path('getUsername', views.get_username),
-    path('follow',views.follow),
-    path('cancelFollow',views.cancel_follow),
-    path('getFollowers',views.get_followers),
-    path('getFollowees',views.get_followees),
-    path('getEmail',views.get_email),
-    path('modifyPwdLogin',views.modify_password_login)
+    #path('follow',views.follow),
+    #path('cancelFollow',views.cancel_follow),
+    #path('getFollowers',views.get_followers),
+    #path('getFollowees',views.get_followees),
+    #path('getEmail',views.get_email),
+    #path('modifyPwdLogin',views.modify_password_login)
 ]

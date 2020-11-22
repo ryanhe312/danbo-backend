@@ -22,7 +22,7 @@ def get_login_user(request):
     if not username or not User.objects.filter(username=username).exists():
         return None
     else:
-        return User.objects.get(username=username)
+        return User.objects.filter(username=username)
 
 
 def check_password2(password):

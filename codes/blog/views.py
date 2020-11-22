@@ -37,8 +37,8 @@ def generate_blog_content(b):
         'time': time,
         'origin_user': b.user.username,
         'origin_content': b.content,
-        'users': users
-        'contents': contents
+        'users': users,
+        'contents': contents,
         'pictures':picture_paths,
     }
 
