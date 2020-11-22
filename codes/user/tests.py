@@ -436,6 +436,17 @@ class TestInformation(TestCase):
 
         return super().tearDown()
 
+    def test_get_email(self):
+
+        print("-----获取邮箱：用户不存在-----")
+        error, data = self.get_response("getEmail", {"username":"szy"})
+        assert error == 441, "error code = %d"%(error) 
+
+        print("-----获取邮箱：成功-----")
+        error, data = self.get_response("getEmail", {"username":"xsh"})
+        assert error == 200, "error code = %d"%(error) 
+        assert data == "17307130121@fudan.edu.cn", "email = %s"%(data)
+
     def test_nickname(self):
 
         request = {'username':'xsh'}
@@ -627,60 +638,19 @@ class TestInformation(TestCase):
         content = json.loads(response.content)
         return content['error_code'], content['data']
 
-#class TestProfile(TestCase):
-
-#    def setUp(self):
-
-#        # 新建用户
-#        User.objects.all().delete()
-#        password = make_password("xingshuhao990729")
-#        User.objects.create(username = "xsh",password = password,email = "17307130121@fudan.edu.cn")
-
-#        print("--------------头像测试--------------")
-
-#    def tearDown(self):
-
-#        print("--------------测试结束--------------")
-
-#        return super().tearDown()
-
-#    def test_profile(self):
-
-#        request = {
-#            'username': 'xsh',
-#            }
-
-#        request['profile_path'] = open('C:/Users/super/Desktop/美图/头像.jpg', 'rb')
-#        error, data = self.run_test(request)
-#        assert error == 200, "error code = %d"%(error)
-
-#    def modify_profile(self, request):
-
-#        response = self.client.post('user/modifyProfile', request)
-#        content = json.loads(response.content)
-#        return content['error_code'], content['data']
-
-#    def get_profile(self, request):
-
-#        response = self.client.post('user/modifyProfile', request)
-#        content = json.loads(response.content)
-#        return content['error_code'], content['data']
-
 class TestModifyPasswordLogin(TestCase):
-    # 登录状态下修改密码功能的测试
-    # python manage.py test user.tests.TestModifyPassword
-    # send_veri_code_login...完成
-    # modify_password...完成
-
-    def setUp(self):
-
-        # 新建用户
+# 登录时修改密码
+# modify_password_login...
+    @classmethod
+    def setUpClass(cls):
         User.objects.all().delete()
         password = make_password("xingshuhao990729")
-        User.objects.create(username = "xsh",password = password,email = "17307130121@fudan.edu.cn")
-        password = make_password("sheeeep")
-        User.objects.create(username = "szy",password = password,email = "17307130056@fudan.edu.cn")
-        
+        User.objects.create(username = "xsh",password = password, email = "17307130121@fudan.edu.cn",
+                            birthday = "1999-07-29", address = "山东省威海市", 
+                            signature = "奔向夜晚")
+        return super().setUpClass()
+
+    def setUp(self):
 
         self.modify = {
             "username": "xsh",
@@ -688,22 +658,14 @@ class TestModifyPasswordLogin(TestCase):
             "r_password": "xsh990729",
             "email": "17307130121@fudan.edu.cn"
             }
-        self.client.login(username = "xsh")
-        print("--------------开始修改密码测试--------------")
+
+        self.client.cookies['username'] = "xsh"
+        print("--------------开始修改密码（登录）测试--------------")
 
     def tearDown(self):
 
-        print("--------------修改密码测试结束--------------")
-
+        print("--------------结束修改密码（登录）测试--------------")
         return super().tearDown()
-
-    def test_no_user(self):
-        # 用户不存在
-
-        print("--------测试不存在用户--------")
-        self.modify['username'] = "xsh999"
-        error = self.run_test()
-        assert error == 421, "error code = %d"%(error)
 
     def test_illegal_password(self):
         # 不合法密码
@@ -764,6 +726,7 @@ class TestModifyPasswordLogin(TestCase):
     # 正常修改测试
     def test_normal(self):
 
+        print("成功测试")
         error = self.run_test()
         assert error == 200, "error code = %d"%(error)
 
@@ -790,10 +753,6 @@ class TestModifyPasswordLogin(TestCase):
 
     def run_test(self, code_correct = True):
         # 修改密码的测试模板
-        # Arguments:
-        #     code_correct:<bool>, email_correct:<bool>
-        # Return:
-        #     error code<int>
 
         email = self.modify['email']
         # 发送邮件
@@ -802,7 +761,7 @@ class TestModifyPasswordLogin(TestCase):
         if content['error_code'] != 200:
             print("邮件发送失败")
             return content['error_code']
-
+        print("邮件发送成功！")
         # 获得验证码
         record = VerificationCode.objects.filter(email = email)
         code = record[0].code
@@ -820,6 +779,60 @@ class TestModifyPasswordLogin(TestCase):
 
         # 修改
         self.modify['code'] = input_code
-        response = self.client.post('/user/modifyPwdLogin', self.modify)
+        response = self.client.post('/user/modifyPwd', self.modify)
         content = json.loads(response.content)
         return content['error_code']
+
+class TestFollow(TestCase):
+# 关注功能
+# follow...
+# cancel_follow...
+# get_followers...
+# get_followees...
+    def setUp(self):
+
+        print("--------------开始关注测试--------------")
+
+    def tearDown(self):
+
+        print("--------------结束关注测试--------------")
+        return super().tearDown()
+
+#class TestProfile(TestCase):
+
+#    def setUp(self):
+
+#        # 新建用户
+#        User.objects.all().delete()
+#        password = make_password("xingshuhao990729")
+#        User.objects.create(username = "xsh",password = password,email = "17307130121@fudan.edu.cn")
+
+#        print("--------------头像测试--------------")
+
+#    def tearDown(self):
+
+#        print("--------------测试结束--------------")
+
+#        return super().tearDown()
+
+#    def test_profile(self):
+
+#        request = {
+#            'username': 'xsh',
+#            }
+
+#        request['profile_path'] = open('C:/Users/super/Desktop/美图/头像.jpg', 'rb')
+#        error, data = self.run_test(request)
+#        assert error == 200, "error code = %d"%(error)
+
+#    def modify_profile(self, request):
+
+#        response = self.client.post('user/modifyProfile', request)
+#        content = json.loads(response.content)
+#        return content['error_code'], content['data']
+
+#    def get_profile(self, request):
+
+#        response = self.client.post('user/modifyProfile', request)
+#        content = json.loads(response.content)
+#        return content['error_code'], content['data']
