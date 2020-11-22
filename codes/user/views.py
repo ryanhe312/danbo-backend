@@ -10,6 +10,21 @@ import json
 
 # Create your views here.
 
+
+def get_login_user(request):
+    # 获取当前登录用户
+    # Arguments:
+    #     request
+    # Return:
+    #     None if cookie not exist or target user not exist
+    #     user object if the target user exists
+    username = request.COOKIES.get('username')
+    if not username or not User.objects.filter(username=username).exists():
+        return None
+    else:
+        return User.objects.get(username=username)
+
+
 def check_password2(password):
     # 检查密码是否合法
     # Arguments:
@@ -130,7 +145,7 @@ def send_veri_code_register(request):
     return HttpResponse(json.dumps(content))
 
 def login(request):
-    # 用户登录
+    # 用户登录，若成功，设置cookie,存活时间为6小时
     # Arguments:
     #     request: It should contains {"username":<str>, "password":<str>}
     # Return:
@@ -147,8 +162,29 @@ def login(request):
                 content = {"error_code": 412, "message": "密码不正确", "data": None}
             else:
                 content = {"error_code": 200, "message": "登录成功", "data": None}
+                response = HttpResponse(json.dumps(content))
+                response.set_cookie('username',username,6*3600)
+                return response
     return HttpResponse(json.dumps(content))
     #return render(request,'login.html')
+
+def logout(request):
+    # 用户退出登录，若成功，清除cookie值
+    # Arguments:
+    #     request: no data in the body
+    # Return:
+    #     An HttpResponse which contains {"error_code":<int>, "message":<str>,"data":None}
+    content = {}
+    if request.method == 'POST':
+        user = get_login_user(request)
+        if user is None:
+            content = {"error_code": 411, "message": "当前未登录", "data": None}
+        else:
+            content = {"err_code": 200, "message": "成功退出登录", "data": None}
+            response = HttpResponse(json.dumps(content))
+            response.delete_cookie("username")
+            return response
+    return HttpResponse(json.dumps(content))
 
 def send_veri_code_login(request):
     # 向用户邮箱发送登录时找回密码的验证码
@@ -207,114 +243,123 @@ def modify_password(request):
 def modify_signature(request):
     # 用户修改签名
     # Arguments:
-    #     request: It should contains {"username":<str>,"signature":<str>}
+    #     request: It should contains {"signature":<str>} need Cookie
     # Return:
     #     An HttpResponse which contains {"error_code":<int>, "message":<str>,"data":None}
     content = {}
     if request.method == 'POST':
-        username = request.POST.get('username')
-        signature = request.POST.get('signature')
-        if User.objects.filter(username=username).exists()==False:
-            content = {"error_code":431,"message":"用户名不存在","data":None}
-        elif len(signature)>30:
-            content = {"error_code": 433, "message": "签名长度应小于30个字符", "data": None}
+        user = get_login_user(request)
+        if user is None:
+            content = {"error_code": 431, "message": "用户名不存在或当前未登录", "data": None}
         else:
-            User.objects.filter(username=username).update(signature=signature)
-            content = {"error_code": 200, "message": "签名修改成功", "data": None}
+            signature = request.POST.get('signature')
+            if len(signature)>30:
+                content = {"error_code": 433, "message": "签名长度应小于30个字符", "data": None}
+            else:
+                user.signature=signature
+                user.save()
+                content = {"error_code": 200, "message": "签名修改成功", "data": None}
     return HttpResponse(json.dumps(content))
 
 def modify_nickname(request):
     # 用户修改昵称
     # Arguments:
-    #     request: It should contains {"username":<str>,"nickname":<str>}
+    #     request: It should contains {"nickname":<str>} need Cookie
     # Return:
     #     An HttpResponse which contains {"error_code":<int>, "message":<str>,"data":None}
     content = {}
     if request.method == 'POST':
-        username = request.POST.get('username')
-        nickname = request.POST.get('nickname')
-        if User.objects.filter(username=username).exists()==False:
-            content = {"error_code":431,"message":"用户名不存在","data":None}
-        elif len(nickname)>20 or len(nickname)==0:
-            content = {"error_code": 433, "message": "昵称长度应小于20个字符，且不能为空", "data": None}
+        user = get_login_user(request)
+        if user is None:
+            content = {"error_code": 431, "message": "用户名不存在或当前未登录", "data": None}
         else:
-            User.objects.filter(username=username).update(nickname=nickname)
-            content = {"error_code": 200, "message": "昵称修改成功", "data": None}
+            nickname = request.POST.get('nickname')
+            if len(nickname)>20 or len(nickname)==0:
+                content = {"error_code": 433, "message": "昵称长度应小于20个字符，且不能为空", "data": None}
+            else:
+                user.nickname=nickname
+                user.save()
+                content = {"error_code": 200, "message": "昵称修改成功", "data": None}
     return HttpResponse(json.dumps(content))
 
 def modify_address(request):
     # 用户修改地址
     # Arguments:
-    #     request: It should contains {"username":<str>,"address":<str>}
+    #     request: It should contains {"address":<str>} need Cookie
     # Return:
     #     An HttpResponse which contains {"error_code":<int>, "message":<str>,"data":None}
     content = {}
     if request.method == 'POST':
-        username = request.POST.get('username')
-        address = request.POST.get('address')
-        if User.objects.filter(username=username).exists()==False:
-            content = {"error_code":431,"message":"用户名不存在","data":None}
-        elif len(address)>40:
-            content = {"error_code": 433, "message": "地址长度应小于40个字符", "data": None}
+        user = get_login_user(request)
+        if user is None:
+            content = {"error_code": 431, "message": "用户名不存在或当前未登录", "data": None}
         else:
-            User.objects.filter(username=username).update(address=address)
-            content = {"error_code": 200, "message": "地址修改成功", "data": None}
+            address = request.POST.get('address')
+            if len(address)>40:
+                content = {"error_code": 433, "message": "地址长度应小于40个字符", "data": None}
+            else:
+                user.address=address
+                user.save()
+                content = {"error_code": 200, "message": "地址修改成功", "data": None}
     return HttpResponse(json.dumps(content))
 
 def modify_birthday(request):
     # 用户修改生日
     # Arguments:
-    #     request: It should contains {"username":<str>,"birthday":<str>}
-    #              The format of birthday is"YYYY-MM-DD" 
+    #     request: It should contains {"birthday":<str>} need Cookie
+    #              The format of birthday is"YY-MM-DD"
     # Return:
     #     An HttpResponse which contains {"error_code":<int>, "message":<str>,"data":None}
     content = {}
     if request.method == 'POST':
-        username = request.POST.get('username')
-        birthday = request.POST.get('birthday')
-        if User.objects.filter(username=username).exists()==False:
-            content = {"error_code":431,"message":"用户名不存在","data":None}
-        elif len(birthday)>40:
-            content = {"error_code": 433, "message": "生日长度应小于40个字符", "data": None}
+        user = get_login_user(request)
+        if user is None:
+            content = {"error_code": 431, "message": "用户名不存在或当前未登录", "data": None}
         else:
-            User.objects.filter(username=username).update(birthday=birthday)
-            content = {"error_code": 200, "message": "生日修改成功", "data": None}
+            birthday = request.POST.get('birthday')
+            if len(birthday)>40:
+                content = {"error_code": 433, "message": "生日长度应小于40个字符", "data": None}
+            else:
+                user.birthday=birthday
+                user.save()
+                content = {"error_code": 200, "message": "生日修改成功", "data": None}
     return HttpResponse(json.dumps(content))
 
 def modify_gender(request):
     # 用户修改性别
     # Arguments:
-    #     request: It should contains {"username":<str>,"gender":<str>}
+    #     request: It should contains {"gender":<str>} need Cookie
     #              gender has a limited value to '男' or '女' or '保密'
     # Return:
     #     An HttpResponse which contains {"error_code":<int>, "message":<str>,"data":None}
     content = {}
     if request.method == 'POST':
-        username = request.POST.get('username')
-        gender = request.POST.get('gender')
-        if User.objects.filter(username=username).exists()==False:
-            content = {"error_code":431,"message":"用户名不存在","data":None}
-        elif gender!='男' and gender!='女' and gender != '保密':
-            content = {"error_code": 433, "message": "性别错误", "data": None}
+        user = get_login_user(request)
+        if user is None:
+            content = {"error_code": 431, "message": "用户名不存在或当前未登录", "data": None}
         else:
-            User.objects.filter(username=username).update(gender=gender)
-            content = {"error_code": 200, "message": "性别修改成功", "data": None}
+            gender = request.POST.get('gender')
+            if gender!='男' and gender!='女' and gender != '保密':
+                content = {"error_code": 433, "message": "性别错误", "data": None}
+            else:
+                user.gender=gender
+                user.save()
+                content = {"error_code": 200, "message": "性别修改成功", "data": None}
     return HttpResponse(json.dumps(content))
 
 def modify_profile(request):
     # 用户修改头像
     # Arguments:
-    #     request: It should contains {"username":<str>,"profile":<file> }
+    #     request: It should contains {"profile":<file> } need Cookie
     # Return:
     #     An HttpResponse which contains {"error_code":<int>, "message":<str>,"data":None}
     content = {}
     if request.method == 'POST':
-        username = request.POST.get('username')
-        profile  = request.FILES.get('profile')
-        if User.objects.filter(username=username).exists()==False:
-            content = {"error_code":431,"message":"用户名不存在","data":None}
+        user = get_login_user(request)
+        if user is None:
+            content = {"error_code": 431, "message": "用户名不存在或当前未登录", "data": None}
         else:
-            user = User.objects.get(username=username)
+            profile  = request.FILES.get('profile')
             Profile.objects.filter(user=user).delete()
             Profile.objects.create(user=user,image=profile)
             content = {"error_code": 200, "message": "头像修改成功", "data": None}
@@ -413,7 +458,6 @@ def get_profile_path(request):
         if User.objects.filter(username=username).exists()==False:
             content = {"error_code":441,"message":"用户名不存在","data":None}
         else:
-            user = User.objects.get(username=username)
             if Profile.objects.filter(user=user).exists()==False:
                 profile_path = 'default_path'
             else:
@@ -422,4 +466,16 @@ def get_profile_path(request):
             content = {"error_code": 200, "message": "获取头像路径成功", "data": profile_path}
     return HttpResponse(json.dumps(content))
 
-
+def get_username(request):
+    ''' 查询当前登录用户，仅用于前端处理
+    Return:
+        An HttpRepsonse, which contains {"err_code":<int>, "message":<str>, "data":user or None}
+    '''
+    content = {}
+    if request.method == 'POST':
+        user = get_login_user(request)
+        if user is None:
+            content = {"error_code": 441, "message": "用户名不存在或当前未登录", "data": None}
+        else:
+            content = {"error_code": 200, "message": "获取用户名成功", "data": user.username}
+    return HttpResponse(json.dumps(content))
