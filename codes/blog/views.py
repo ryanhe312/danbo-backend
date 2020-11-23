@@ -1,29 +1,17 @@
 from django.shortcuts import render,HttpResponse
 from .models import Blog,Picture,Comment,Like
 from user.models import User,Follow
+from utils.utils import *
 import datetime
 import json
 # Create your views here.
 
-def get_login_user(request):
-    # 获取当前登录用户
-    # Arguments:
-    #     request
-    # Return:
-    #     None if cookie not exist or target user not exist
-    #     user object if the target user exists
-    username = request.COOKIES.get('username')
-    if not username or not User.objects.filter(username=username).exists():
-        return None
-    else:
-        return User.objects.get(username=username)
-
 def generate_blog_content(b):
     contents = []
     users = []
-    time = b.release_time.strftime("%Y-%m-%m %H:%M:%S")
+    time = b.release_time.strftime("%Y-%m-%d %H:%M:%S")
 
-    while b.type == 'repost':
+    while b.repost_link != 0:
         contents.append(b.content)
         users.append(b.user.username)
         b = Blog.objects.get(id=b.repost_link)  
@@ -77,7 +65,7 @@ def refresh_blogs(request):
     # Arguments:
     #     request: It should contains {"content":<str>,"pictures":<file>,"pictures":<file>...} need Cookie
     # Return:
-    #     An HttpResponse which contains {"error_code":<int>, "message":<str>,"data":None}
+    #     An HttpResponse which contains {"error_code":<int>, "message":<str>,"data":<list>}
     content={}
     if request.method == 'POST':
         user = get_login_user(request)
@@ -96,7 +84,6 @@ def refresh_blogs(request):
                 for b in follow_blogs:
                     data[b.id] = generate_blog_content(b)
 
-            data = sorted(data.items(),key=lambda x:x[0],reverse=True)
             content = {"error_code": 200, "message": "获取博客成功", "data": data}
     return HttpResponse(json.dumps(content))
 
@@ -105,16 +92,12 @@ def get_blogs(request):
     # Arguments:
     #     request: It should contains {"username":<str>}
     # Return:
-    #     An HttpResponse which contains {"error_code":<int>, "message":<str>,"data":<dict>}
-    #     Here data is a dictionary, its key is the release time(str) of the blog, and its value is a dictionary (blog_id<int>,type<str>,content<str>,pictures<list>,repost_link<int>,comments<list>, likes<list>)
-    #       pcitures:list of picture paths<str>
-    #       comments: list of comment ids<int>
-    #       likes: list of like usernames<str>
-    #       type：only 2 valid values: 'origin' or 'repost'
+    #     An HttpResponse which contains {"error_code":<int>, "message":<str>,"data":<list>}
+    #     Here data is a dictionary, its key is the id of the blog, and its value is a dictionary (time<str>,original_user<str>,original_content<str>,users<list>,contents<int>,pictures<list>)
 
     content = {}
     data = {}
-    if request.methvod == 'POST':
+    if request.method == 'POST':
         username = request.POST.get('username')
         if User.objects.filter(username=username).exists()==False:
             content = {"error_code":441,"message":"用户名不存在","data":None}
@@ -124,9 +107,8 @@ def get_blogs(request):
             for b in blogs:
                 data[b.id] = generate_blog_content(b)
 
-            data = sorted(data.items(), key=lambda x: x[0], reverse=True)
             content = {"error_code": 200, "message": "获取博客成功", "data": data}
-    return HttpResponse(json.dumps(content))#这里dumps有问题
+    return HttpResponse(json.dumps(content))
 
 # 获取指定博客的点赞列表
 def get_likes(request):
@@ -137,7 +119,7 @@ def get_likes(request):
     #     An HttpResponse which contains {"error_code":<int>, "message":<str>,"data":<list>>}
     content={}
     if request.method == 'POST':
-        blog_id = int(request.get('blog_id'))
+        blog_id = int(request.POST.get('blog_id'))
         if Blog.objects.filter(id=blog_id).exists() is False:
             content = {"error_code": 442, "message": "目标博客不存在", "data": None}
         else:
@@ -145,7 +127,7 @@ def get_likes(request):
             like_usernames = []
             likes = Like.objects.filter(blog=blog)
             for lk in likes:
-                like_usernames.append(lk.user)
+                like_usernames.append(lk.user.username)
             content = {"error_code": 200, "message": "点赞获取成功", "data": like_usernames}
     
     return HttpResponse(json.dumps(content))
@@ -159,7 +141,7 @@ def get_comments(request):
     #     An HttpResponse which contains {"error_code":<int>, "message":<str>,"data":<list>>}
     content={}
     if request.method == 'POST':
-        blog_id = int(request.get('blog_id'))
+        blog_id = int(request.POST.get('blog_id'))
         if Blog.objects.filter(id=blog_id).exists() is False:
             content = {"error_code": 442, "message": "目标博客不存在", "data": None}
         else:
@@ -168,12 +150,12 @@ def get_comments(request):
             comments = Comment.objects.filter(blog=blog)
             for cmt in comments:
                 data[cmt.id] = {
-                    'time': cmt.release_time.strftime("%Y-%m-%m %H:%M:%S"),
+                    'time': cmt.release_time.strftime("%Y-%m-%d %H:%M:%S"),
                     'username': cmt.user.username,
                     'blog_id':cmt.id,
                     'content':cmt.content,
                   }
-            data = sorted(data.items(), key=lambda x: x[0], reverse=True)
+
             content = {"error_code": 200, "message": "评论获取成功", "data": data}
     
     return HttpResponse(json.dumps(content))
@@ -196,11 +178,11 @@ def repost_blog(request):
             if len(text) > 100:
                 content = {"error_code":433, "message":"转发正文内容不能超过100字", "data":None}
             else:
-                blog_id = int(request.get('blog_id'))
+                blog_id = int(request.POST.get('blog_id'))
                 if Blog.objects.filter(id=blog_id).exists() is False:
                     content = {"error_code": 442, "message": "转发的目标博客不存在", "data": None}
                 else:
-                    Blog.objects.create(user=user,content=text,type='repost',repost_link=blog_id )
+                    Blog.objects.create(user=user,content=text,repost_link=blog_id)
 
                     content = {"error_code": 200, "message": "博客转发成功", "data": None}
     
@@ -250,8 +232,8 @@ def give_like(request):
             if Blog.objects.filter(id=target_blog_id).exists() == False:
                 content = {"error_code": 441, "message": "点赞的目标博客不存在", "data": None}
             else:
-                target_blog = User.objects.get(id=target_blog_id)
-                if Like.objects.filter(user=from_user,blog=target_blog).exist():
+                target_blog = Blog.objects.get(id=target_blog_id)
+                if Like.objects.filter(user=from_user,blog=target_blog).exists():
                     content = {"error_code": 442, "message": "请不要重复点赞", "data": None}
                 else:
                     Like.objects.create(user=from_user,blog=target_blog)
@@ -275,7 +257,7 @@ def cancel_like(request):
                 content = {"error_code": 441, "message": "取消点赞的目标博客不存在", "data": None}
             else:
                 target_blog = User.objects.get(id=target_blog_id)
-                if Like.objects.filter(user=from_user, blog=target_blog).exist() is False:
+                if Like.objects.filter(user=from_user, blog=target_blog).exists() is False:
                     content = {"error_code": 442, "message": "当前还未点赞", "data": None}
                 else:
                     Like.objects.get(user=from_user, blog=target_blog).delete()
