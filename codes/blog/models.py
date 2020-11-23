@@ -18,8 +18,7 @@ class Blog(models.Model):
     user = models.ForeignKey('user.User',on_delete=models.CASCADE,related_name='blogs')     #发布博客的用户
     release_time = models.DateTimeField(auto_now_add=True)             #发布时间
     content = models.TextField(max_length=260)        #文本内容
-    type = models.CharField(max_length=6,default='origin')      # 博客类型，只有两个有效值： 'origin'表示原创，'repost'表示转发
-    repost_link = models.IntegerField(null=True)        #转发博客的Id, 若为原创博客，则该属性为null
+    repost_link = models.IntegerField(default=0)        #转发博客的Id, 若为原创博客，则该属性为0
 #图片
 class Picture(models.Model):
     blog = models.ForeignKey('blog.Blog',on_delete=models.CASCADE,related_name='pictures')      #图片所属的博客
