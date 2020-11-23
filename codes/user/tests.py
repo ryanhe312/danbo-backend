@@ -783,20 +783,99 @@ class TestModifyPasswordLogin(TestCase):
         content = json.loads(response.content)
         return content['error_code']
 
+# 关注：是否应该合并成为一个按钮？异或是交给前端判断？
 class TestFollow(TestCase):
 # 关注功能
 # follow...
 # cancel_follow...
 # get_followers...
 # get_followees...
+    @classmethod
+    def setUpClass(cls):
+
+        # 新建四个用户
+        User.objects.all().delete()
+        password = make_password("xingshuhao990729")
+        User.objects.create(username = "xsh",password = password,email = "17307130121@fudan.edu.cn")
+        password = make_password("123456")
+        User.objects.create(username = "xsh1",password = password,email = "17307130122@fudan.edu.cn")
+        password = make_password("123456")
+        User.objects.create(username = "xsh2",password = password,email = "17307130123@fudan.edu.cn")
+        password = make_password("123456")
+        User.objects.create(username = "xsh3",password = password,email = "17307130124@fudan.edu.cn")
+        return super().setUpClass()
+
     def setUp(self):
 
+        self.client.cookies["username"] = "xsh"
         print("--------------开始关注测试--------------")
 
     def tearDown(self):
 
         print("--------------结束关注测试--------------")
         return super().tearDown()
+
+    def test_follow(self):# to be continued.
+        #views.py 589 613行exists少了个s
+        # get_系列只返回名字？
+        # 想要两层实现是嘛……
+
+        print("--------测试关注--------")
+        self.follow("xsh1")
+        self.follow("xsh2")
+        self.follow("xsh3")
+
+        print("-----测试重复关注-----")
+        self.follow("xsh1", 432)
+        self.follow("xsh2", 432)
+        self.follow("xsh3", 432)
+
+        print("-----不存在的关注人-----")
+        self.follow("xshh", 431)
+
+        print("-----获取关注列表-----")
+        self.get_followees("xsh")
+
+        print("-----不存在的取消关注者-----")
+        self.cancel_follow("xshh", 431)
+
+        print("-----取消关注xsh1-----")
+        self.cancel_follow("xsh1")
+
+        print("-----获取关注列表-----")
+        self.get_followees("xsh")
+
+        print("-----获取粉丝-----")
+        self.get_followers("xsh2")
+
+    def follow(self, name, err_code = 200):
+
+        error, data = self.get_response("follow", {"to_username": name})
+        assert error == err_code, "error code = %d"%(error)
+
+    def cancel_follow(self, name, err_code = 200):
+
+        error, data = self.get_response("cancelFollow", {"to_username": name})
+        assert error == err_code, "error code = %d"%(error)
+
+    def get_followers(self, name):
+
+        error, data = self.get_response("getFollowers", {"username": name})
+        assert error == 200, "error code = %d"%(error)
+        print(data)
+
+    def get_followees(self, name):
+
+        error, data = self.get_response("getFollowees", {"username": name})
+        assert error == 200, "error code = %d"%(error)
+        print(data)
+
+
+    def get_response(self, url, request):
+
+        response = self.client.post("/user/" + url, request)
+        content = json.loads(response.content)
+        return content['error_code'], content['data']
 
 #class TestProfile(TestCase):
 

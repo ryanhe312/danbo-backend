@@ -586,7 +586,7 @@ def follow(request):
                 content = {"error_code": 431, "message": "关注对象不存在", "data": None}
             else:
                 to_user = User.objects.get(username =to_username )
-                if Follow.objects.filter(from_user=from_user,to_user=to_user).exist():
+                if Follow.objects.filter(from_user=from_user,to_user=to_user).exists():
                     content = {"error_code": 432, "message": "请不要重复关注", "data": None}
                 else:
                     Follow.objects.create(from_user=from_user,to_user=to_user)
@@ -610,7 +610,7 @@ def cancel_follow(request):
                 content = {"error_code": 431, "message": "取消关注的对象不存在", "data": None}
             else:
                 to_user = User.objects.get(username =to_username )
-                if Follow.objects.filter(from_user=from_user,to_user=to_user).exist() is False:
+                if Follow.objects.filter(from_user=from_user,to_user=to_user).exists() is False:
                     content = {"error_code": 433, "message": "当前还未关注", "data": None}
                 else:
                     Follow.objects.get(from_user=from_user,to_user=to_user).delete()
