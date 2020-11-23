@@ -2,6 +2,7 @@ from django.shortcuts import render,HttpResponse
 from django.contrib.auth.hashers import make_password, check_password
 from user.models import  User,VerificationCode,Profile,Follow
 from blog.models import Blog,Picture
+from utils.utils import  *
 from django.core.mail import send_mail
 import re
 import random
@@ -9,21 +10,6 @@ import time
 import json
 
 # Create your views here.
-
-
-def get_login_user(request):
-    # 获取当前登录用户
-    # Arguments:
-    #     request
-    # Return:
-    #     None if cookie not exist or target user not exist
-    #     user object if the target user exists
-    username = request.COOKIES.get('username')
-    if not username or not User.objects.filter(username=username).exists():
-        return None
-    else:
-        return User.objects.get(username=username)
-
 
 def check_password2(password):
     # 检查密码是否合法
@@ -540,11 +526,24 @@ def get_followees(request):
         else:
             user = User.objects.get(username=username)
             followships = Follow.objects.filter(from_user = user)
-            followee_names = []
-            for followship in followships :
-                followee_names.append(followship.to_user.username)
 
-            content = {"error_code": 200, "message": "获取关注列表成功", "data": followee_names}
+            followees = {}
+            for followship in followships :
+                to_user = User.objects.get(username=followship.to_user.username)
+
+                if Profile.objects.filter(user=to_user).exists()==False:
+                    profile_path = 'default_path'
+                else:
+                    profile = Profile.objects.get(user=to_user)
+                    profile_path = str(profile.image)
+
+                followees[to_user.username] = {
+                    'nickname': to_user.nickname,
+                    'signature': to_user.signature,
+                    'profile':profile_path
+                    }
+
+            content = {"error_code": 200, "message": "获取关注列表成功", "data": followees}
     return HttpResponse(json.dumps(content))
 
 def get_followers(request):
@@ -561,11 +560,24 @@ def get_followers(request):
         else:
             user = User.objects.get(username=username)
             followships = Follow.objects.filter(to_user = user)
-            follower_names = []
-            for followship in followships :
-                follower_names.append(followship.from_user.username)
 
-            content = {"error_code": 200, "message": "获取关注者列表成功", "data": follower_names}
+            followers = {}
+            for followship in followships :
+                from_user = User.objects.get(username=followship.from_user.username)
+
+                if Profile.objects.filter(user=from_user).exists()==False:
+                    profile_path = 'default_path'
+                else:
+                    profile = Profile.objects.get(user=from_user)
+                    profile_path = str(profile.image)
+
+                followers[from_user.username] = {
+                    'nickname': from_user.nickname,
+                    'signature': from_user.signature,
+                    'profile':profile_path
+                    }
+
+            content = {"error_code": 200, "message": "获取关注者列表成功", "data": followers}
     return HttpResponse(json.dumps(content))
 
 
