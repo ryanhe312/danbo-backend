@@ -489,7 +489,7 @@ def get_profile_path(request):
             content = {"error_code":441,"message":"用户名不存在","data":None}
         else:
             if Profile.objects.filter(user=user).exists()==False:
-                profile_path = 'default_path'
+                profile_path = 'profiles/default.jpeg'
             else:
                 profile = Profile.objects.get(user=user)
                 profile_path = str(profile.image)
