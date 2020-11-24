@@ -11,21 +11,6 @@ import json
 
 # Create your views here.
 
-
-def get_login_user(request):
-    # 获取当前登录用户
-    # Arguments:
-    #     request
-    # Return:
-    #     None if cookie not exist or target user not exist
-    #     user object if the target user exists
-    username = request.COOKIES.get('username')
-    if not username or not User.objects.filter(username=username).exists():
-        return None
-    else:
-        return User.objects.get(username=username)
-
-
 def check_password2(password):
     # 检查密码是否合法
     # Arguments:
@@ -358,8 +343,8 @@ def modify_birthday(request):
 def modify_gender(request):
     # 用户修改性别
     # Arguments:
-    #     request: It should contains {"gender":<str>} need Cookie
-    #              gender has a limited value to '男' or '女' or '保密'
+    #     request: It should contains {"gender":int} need Cookie
+    #              gender has a limited value to 0(男) or 1（女） or 2（保密）
     # Return:
     #     An HttpResponse which contains {"error_code":<int>, "message":<str>,"data":None}
     content = {}
@@ -368,8 +353,8 @@ def modify_gender(request):
         if user is None:
             content = {"error_code": 431, "message": "用户名不存在或当前未登录", "data": None}
         else:
-            gender = request.POST.get('gender')
-            if gender!='男' and gender!='女' and gender != '保密':
+            gender = int(request.POST.get('gender'))
+            if gender < 0 or gender > 2:
                 content = {"error_code": 433, "message": "性别错误", "data": None}
             else:
                 user.gender = gender
@@ -448,7 +433,7 @@ def get_gender(request):
     # Arguments:
     #     request: It should contains {"username":<str>}
     # Return:
-    #     An HttpResponse which contains {"error_code":<int>, "message":<str>,"data":<str>}
+    #     An HttpResponse which contains {"error_code":<int>, "message":<str>,"data":<int>}
     content = {}
     if request.method == 'POST':
         username = request.POST.get('username')
@@ -488,6 +473,7 @@ def get_profile_path(request):
         if User.objects.filter(username=username).exists()==False:
             content = {"error_code":441,"message":"用户名不存在","data":None}
         else:
+            user = User.objects.get(username=username)
             if Profile.objects.filter(user=user).exists()==False:
                 profile_path = 'profiles/default.jpeg'
             else:

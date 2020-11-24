@@ -508,17 +508,17 @@ class TestInformation(TestCase):
         error, data = self.get_response(get, request)
         print("用户性别为", data)
         assert error == 200, "error code = %d"%(error)
-        assert data == "保密", "gender = %s"%(data)
+        assert data == 2, "gender = %s"%(data)
 
         print("-----修改性别：性别错误-----")
         request = {
-            'gender': "a"
+            'gender': 3
             }
         error, data = self.get_response(modify, request)
         assert error == 433, "error code = %d"%(error)
 
         print("-----修改昵称：成功-----")
-        request['gender'] = "女"
+        request['gender'] = 0 # 男
         print("性别修改为", request['gender'])
         error, data = self.get_response(modify, request)
         assert error == 200, "error code = %d"%(error)
@@ -526,7 +526,7 @@ class TestInformation(TestCase):
         error, data = self.get_response(get, {'username':'xsh'})
         assert error == 200, "error code = %d"%(error)
         print("修改后性别为", data)
-        assert data == request['gender'], "gender changed = %s"%(data)
+        assert data == request['gender'], "gender changed = %d"%(data)
 
     def test_birthday(self):
 
@@ -646,6 +646,10 @@ class TestModifyPasswordLogin(TestCase):
         User.objects.all().delete()
         password = make_password("xingshuhao990729")
         User.objects.create(username = "xsh",password = password, email = "17307130121@fudan.edu.cn",
+                            birthday = "1999-07-29", address = "山东省威海市", 
+                            signature = "奔向夜晚")
+        password = make_password("xingshuhao990729")
+        User.objects.create(username = "xsh1",password = password, email = "17307130056@fudan.edu.cn",
                             birthday = "1999-07-29", address = "山东省威海市", 
                             signature = "奔向夜晚")
         return super().setUpClass()
