@@ -40,3 +40,17 @@ class Like(models.Model):
 
     class Meta:
         unique_together = ("user", "blog")          #组合键值
+
+# 话题
+class Topic(models.Model):
+    name = models.CharField(max_length=30,primary_key=True)     #话题名
+    create_time = models.DateTimeField(auto_now_add=True)       #话题创建时间
+
+#标签
+class Tag(models.Model):
+    blog = models.ForeignKey('blog.Blog',on_delete=models.CASCADE,related_name='tag_blog')          #博客
+    topic = models.ForeignKey('blog.Topic',on_delete=models.CASCADE,related_name='tag_topic')       #话题
+
+    class Meta:
+        unique_together = ("blog", "topic")  # 组合键值
+

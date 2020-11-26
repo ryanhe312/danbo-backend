@@ -144,6 +144,7 @@ def login(request):
             content = {"error_code": 411, "message": "用户不存在", "data": None}
         else:
             key = User.objects.get(username=username).password
+            print(key==password)
             if check_password(password,key) == False:
                 content = {"error_code": 412, "message": "密码不正确", "data": None}
             else:
@@ -628,3 +629,21 @@ def cancel_follow(request):
                     Follow.objects.get(from_user=from_user,to_user=to_user).delete()
                     content = {"error_code": 200, "message": "取消关注成功", "data": None}
     return HttpResponse(json.dumps(content))
+
+def search_user(request):
+    # 查找用户
+    # Arguments:
+    #     request: It should contains {"keyword":<str>}
+    # Return:
+    #     An HttpResponse which contains {"error_code":<int>, "message":<str>,"data":<list>}
+    content = {}
+    if request.method == 'POST':
+        keyword = request.POST.get('keyword')
+        users = User.objects.all()
+        targets = []
+        for user in users:
+            if len(re.findall(keyword,user.username))!=0:
+                targets.append(user.username)
+        content = {"error_code": 200, "message": "查找用户成功", "data": targets}
+    return HttpResponse(json.dumps(content))
+
