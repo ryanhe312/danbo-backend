@@ -1,23 +1,36 @@
 from django.shortcuts import render,HttpResponse
 from .models import Blog,Picture,Comment,Like
 from user.models import User,Follow
+from utils.utils import *
 import datetime
 import json
 # Create your views here.
 
-def get_login_user(request):
-    # 获取当前登录用户
-    # Arguments:
-    #     request
-    # Return:
-    #     None if cookie not exist or target user not exist
-    #     user object if the target user exists
-    username = request.COOKIES.get('username')
-    if not username or not User.objects.filter(username=username).exists():
-        return None
-    else:
-        return User.objects.get(username=username)
+def generate_blog_content(b):
+    contents = []
+    users = []
+    time = b.release_time.strftime("%Y-%m-%d %H:%M:%S")
 
+    while b.repost_link != 0:
+        contents.append(b.content)
+        users.append(b.user.username)
+        b = Blog.objects.get(id=b.repost_link)  
+
+    pictures = Picture.objects.filter(blog=b)
+    picture_paths = []
+    for pic in pictures:
+        picture_paths.append(str(pic.image))
+
+    data = {
+        'time': time,
+        'origin_user': b.user.username,
+        'origin_content': b.content,
+        'users': users,
+        'contents': contents,
+        'pictures':picture_paths,
+    }
+
+    return data
 
 def release_blog(request):
     # 发布博客
@@ -44,7 +57,7 @@ def release_blog(request):
                 for i,picture in enumerate(pictures):
                     Picture.objects.create(blog=blog,image=picture,num=i)
                 content = {"error_code": 200, "message": "博客发布成功", "data": None}
-    #return render(request,'releaseBlog.html')
+    
     return HttpResponse(json.dumps(content))
 
 def refresh_blogs(request):
@@ -52,7 +65,7 @@ def refresh_blogs(request):
     # Arguments:
     #     request: It should contains {"content":<str>,"pictures":<file>,"pictures":<file>...} need Cookie
     # Return:
-    #     An HttpResponse which contains {"error_code":<int>, "message":<str>,"data":None}
+    #     An HttpResponse which contains {"error_code":<int>, "message":<str>,"data":<list>}
     content={}
     if request.method == 'POST':
         user = get_login_user(request)
@@ -62,41 +75,15 @@ def refresh_blogs(request):
             data = {}
             self_blogs = Blog.objects.filter(user=user)
             for b in self_blogs:
-                pictures = Picture.objects.filter(blog=b)
-                picture_paths = []
-                for pic in pictures:
-                    picture_paths.append(str(pic.image))
-                    # 测试注：暂时修改为只传文件路径，不加str无法应用json
-
-                data[b.release_time.strftime("%Y-%m-%m %H:%M:%S")] = {
-                    'username': user.username,
-                    'blog_id': b.id,
-                    'type': b.type,
-                    'content': b.content,
-                    'pictures': picture_paths,
-                    'repost_link': b.repost_link,
-                }
+                data[b.id] = generate_blog_content(b)
 
             followships = Follow.objects.filter(from_user = user)
             for followship in followships:
                 followee = followship.to_user
                 follow_blogs = Blog.objects.filter(user=followee)
                 for b in follow_blogs:
-                    pictures = Picture.objects.filter(blog=b)
-                    picture_paths = []
-                    for pic in pictures:
-                        picture_paths.append(str(pic.image))
-                        # 测试注：暂时修改为只传文件路径，不加str无法应用json
-                    #注 暂时不考虑用户和关注对象在同一时刻发布博客的情况
-                    data[b.release_time.strftime("%Y-%m-%m %H:%M:%S")] = {
-                        'username': followee.username,
-                        'blog_id': b.id,
-                        'type': b.type,
-                        'content': b.content,
-                        'pictures': picture_paths,
-                        'repost_link': b.repost_link,
-                    }
-            data = sorted(data.items(),key=lambda x:x[0],reverse=True)
+                    data[b.id] = generate_blog_content(b)
+
             content = {"error_code": 200, "message": "获取博客成功", "data": data}
     return HttpResponse(json.dumps(content))
 
@@ -105,16 +92,12 @@ def get_blogs(request):
     # Arguments:
     #     request: It should contains {"username":<str>}
     # Return:
-    #     An HttpResponse which contains {"error_code":<int>, "message":<str>,"data":<dict>}
-    #     Here data is a dictionary, its key is the release time(str) of the blog, and its value is a dictionary (blog_id<int>,type<str>,content<str>,pictures<list>,repost_link<int>,comments<list>, likes<list>)
-    #       pcitures:list of picture paths<str>
-    #       comments: list of comment ids<int>
-    #       likes: list of like usernames<str>
-    #       type：only 2 valid values: 'origin' or 'repost'
+    #     An HttpResponse which contains {"error_code":<int>, "message":<str>,"data":<list>}
+    #     Here data is a dictionary, its key is the id of the blog, and its value is a dictionary (time<str>,original_user<str>,original_content<str>,users<list>,contents<int>,pictures<list>)
 
     content = {}
     data = {}
-    if request.methvod == 'POST':
+    if request.method == 'POST':
         username = request.POST.get('username')
         if User.objects.filter(username=username).exists()==False:
             content = {"error_code":441,"message":"用户名不存在","data":None}
@@ -122,22 +105,10 @@ def get_blogs(request):
             user = User.objects.get(username=username)
             blogs = Blog.objects.filter(user = user)
             for b in blogs:
-                pictures = Picture.objects.filter(blog=b)
-                picture_paths = []
-                for pic in pictures:
-                    picture_paths.append(str(pic.image))
-                    # 测试注：暂时修改为只传文件路径，不加str无法应用json
+                data[b.id] = generate_blog_content(b)
 
-                data[b.release_time.strftime("%Y-%m-%m %H:%M:%S")] = {
-                    'blog_id':b.id,
-                    'type':b.type,
-                    'content':b.content,
-                    'pictures':picture_paths,
-                    'repost_link':b.repost_link,
-                  }
-            data = sorted(data.items(), key=lambda x: x[0], reverse=True)
             content = {"error_code": 200, "message": "获取博客成功", "data": data}
-    return HttpResponse(json.dumps(content))#这里dumps有问题
+    return HttpResponse(json.dumps(content))
 
 # 获取指定博客的点赞列表
 def get_likes(request):
@@ -148,7 +119,7 @@ def get_likes(request):
     #     An HttpResponse which contains {"error_code":<int>, "message":<str>,"data":<list>>}
     content={}
     if request.method == 'POST':
-        blog_id = request.get('blog_id')
+        blog_id = int(request.POST.get('blog_id'))
         if Blog.objects.filter(id=blog_id).exists() is False:
             content = {"error_code": 442, "message": "目标博客不存在", "data": None}
         else:
@@ -156,9 +127,9 @@ def get_likes(request):
             like_usernames = []
             likes = Like.objects.filter(blog=blog)
             for lk in likes:
-                like_usernames.append(lk.user)
+                like_usernames.append(lk.user.username)
             content = {"error_code": 200, "message": "点赞获取成功", "data": like_usernames}
-    #return render(request,'releaseBlog.html')
+    
     return HttpResponse(json.dumps(content))
 
 # 获取指定博客的评论
@@ -170,18 +141,23 @@ def get_comments(request):
     #     An HttpResponse which contains {"error_code":<int>, "message":<str>,"data":<list>>}
     content={}
     if request.method == 'POST':
-        blog_id = request.get('blog_id')
+        blog_id = int(request.POST.get('blog_id'))
         if Blog.objects.filter(id=blog_id).exists() is False:
             content = {"error_code": 442, "message": "目标博客不存在", "data": None}
         else:
             blog = Blog.objects.get(id=blog_id)
-            comment_ids = []
+            data = {}
             comments = Comment.objects.filter(blog=blog)
             for cmt in comments:
-                comment_ids.append(cmt.id)
-            comment_ids.sort(reverse=False)
-            content = {"error_code": 200, "message": "评论获取成功", "data": comment_ids}
-    #return render(request,'releaseBlog.html')
+                data[cmt.id] = {
+                    'time': cmt.release_time.strftime("%Y-%m-%d %H:%M:%S"),
+                    'username': cmt.user.username,
+                    'blog_id':cmt.id,
+                    'content':cmt.content,
+                  }
+
+            content = {"error_code": 200, "message": "评论获取成功", "data": data}
+    
     return HttpResponse(json.dumps(content))
 
 # 转发博客
@@ -202,14 +178,14 @@ def repost_blog(request):
             if len(text) > 100:
                 content = {"error_code":433, "message":"转发正文内容不能超过100字", "data":None}
             else:
-                blog_id = request.get('blog_id')
+                blog_id = int(request.POST.get('blog_id'))
                 if Blog.objects.filter(id=blog_id).exists() is False:
                     content = {"error_code": 442, "message": "转发的目标博客不存在", "data": None}
                 else:
-                    Blog.objects.create(user=user,content=text,type='repost',repost_link=blog_id )
+                    Blog.objects.create(user=user,content=text,repost_link=blog_id)
 
                     content = {"error_code": 200, "message": "博客转发成功", "data": None}
-    #return render(request,'releaseBlog.html')
+    
     return HttpResponse(json.dumps(content))
 
 #评论
@@ -256,8 +232,8 @@ def give_like(request):
             if Blog.objects.filter(id=target_blog_id).exists() == False:
                 content = {"error_code": 441, "message": "点赞的目标博客不存在", "data": None}
             else:
-                target_blog = User.objects.get(id=target_blog_id)
-                if Like.objects.filter(user=from_user,blog=target_blog).exist():
+                target_blog = Blog.objects.get(id=target_blog_id)
+                if Like.objects.filter(user=from_user,blog=target_blog).exists():
                     content = {"error_code": 442, "message": "请不要重复点赞", "data": None}
                 else:
                     Like.objects.create(user=from_user,blog=target_blog)
@@ -281,117 +257,9 @@ def cancel_like(request):
                 content = {"error_code": 441, "message": "取消点赞的目标博客不存在", "data": None}
             else:
                 target_blog = User.objects.get(id=target_blog_id)
-                if Like.objects.filter(user=from_user, blog=target_blog).exist() is False:
+                if Like.objects.filter(user=from_user, blog=target_blog).exists() is False:
                     content = {"error_code": 442, "message": "当前还未点赞", "data": None}
                 else:
                     Like.objects.get(user=from_user, blog=target_blog).delete()
                     content = {"error_code": 200, "message": "取消点赞成功", "data": None}
     return HttpResponse(json.dumps(content))
-
-
-def test(request):
-    # 仅供后端测试使用
-
-    # # 测试发布博客
-    # username = 'Sun'
-    # user = User.objects.get(username=username)
-    # content = "How are you"
-    # Blog.objects.create(user=user,content=content)
-
-    # #测试评论
-    # blog = Blog.objects.get(id=1)
-    # user = User.objects.get(username='Sun')
-    # content = 'Hi'
-    # Comment.objects.create(user=user,content=content,blog=blog)
-
-    # #测试转发
-    # blog = Blog.objects.get(id=3)
-    # user = User.objects.get(username='Wang')
-    # content = 'I am fine'
-    # Blog.objects.create(user=user,content=content,type='repost',repost_link=blog.id)
-
-    # # 测试点赞
-    # blog = Blog.objects.get(id=1)
-    # user = User.objects.get(username='Sun')
-    # Like.objects.create(user=user,blog=blog)
-
-    # # 测试取消点赞
-    # blog = Blog.objects.get(id=1)
-    # user = User.objects.get(username='Sun')
-    # Like.objects.get(user=user,blog=blog).delete()
-
-
-    # # 测试查询给定用户所有的博客
-    # data = {}
-    # user = User.objects.get(username='Wang')
-    # blogs = Blog.objects.filter(user=user)
-    # for b in blogs:
-    #     pictures = Picture.objects.filter(blog=b)
-    #     picture_paths = []
-    #     for pic in pictures:
-    #         picture_paths.append(str(pic.image))
-    #
-    #     comment_ids = []
-    #     comments = Comment.objects.filter(blog=b)
-    #     for cmt in comments:
-    #         comment_ids.append(cmt.id)
-    #     like_usernames = []
-    #     likes = Like.objects.filter(blog=b)
-    #     for lk in likes:
-    #         like_usernames.append(lk.user.username)
-    #     data[b.release_time.strftime("%Y-%m-%m %H:%M:%S")] = {
-    #         'blog_id': b.id,
-    #         'type': b.type,
-    #         'content': b.content,
-    #         'pictures': picture_paths,
-    #         'repost_link': b.repost_link,
-    #         'comments': comment_ids,
-    #         'likes': like_usernames,
-    #     }
-    #
-    # print(data)
-
-    # 测试博客信息流
-    # user = User.objects.get(username='Wang')
-    # # user2 = User.objects.get(username='Sun')
-    # # Follow.objects.create(from_user=user,to_user=user2)
-    # data = {}
-    # self_blogs = Blog.objects.filter(user=user)
-    # for b in self_blogs:
-    #     pictures = Picture.objects.filter(blog=b)
-    #     picture_paths = []
-    #     for pic in pictures:
-    #         picture_paths.append(str(pic.image))
-    #         # 测试注：暂时修改为只传文件路径，不加str无法应用json
-    #
-    #     data[b.release_time.strftime("%Y-%m-%m %H:%M:%S")] = {
-    #         'username': user.username,
-    #         'blog_id': b.id,
-    #         'type': b.type,
-    #         'content': b.content,
-    #         'pictures': picture_paths,
-    #         'repost_link': b.repost_link,
-    #     }
-    #
-    # followships = Follow.objects.filter(from_user=user)
-    # for followship in followships:
-    #     followee = followship.to_user
-    #     follow_blogs = Blog.objects.filter(user=followee)
-    #     for b in follow_blogs:
-    #         pictures = Picture.objects.filter(blog=b)
-    #         picture_paths = []
-    #         for pic in pictures:
-    #             picture_paths.append(str(pic.image))
-    #             # 测试注：暂时修改为只传文件路径，不加str无法应用json
-    #         # 注 暂时不考虑用户和关注对象在同一时刻发布博客的情况
-    #         data[b.release_time.strftime("%Y-%m-%m %H:%M:%S")] = {
-    #             'username': followee.username,
-    #             'blog_id': b.id,
-    #             'type': b.type,
-    #             'content': b.content,
-    #             'pictures': picture_paths,
-    #             'repost_link': b.repost_link,
-    #         }
-    # data = sorted(data.items(), key=lambda x: x[0],reverse=True)
-    # print(data)
-    return HttpResponse('HH')

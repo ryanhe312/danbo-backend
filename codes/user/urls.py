@@ -25,7 +25,6 @@ urlpatterns = [
     path('cancelFollow',views.cancel_follow),
     path('getFollowers',views.get_followers),
     path('getFollowees',views.get_followees),
-    path('test',views.test_add),
     path('getEmail',views.get_email),
     path('modifyPwdLogin',views.modify_password_login)
 ]
