@@ -13,7 +13,7 @@ def generate_blog_content(b):
     users = []
     time = b.release_time.strftime("%Y-%m-%d %H:%M:%S")
 
-    while b.repost_link != 0:
+    while b.repost_link != -1:
         contents.append(b.content)
         users.append(b.user.username)
         b = Blog.objects.get(id=b.repost_link)  
@@ -53,7 +53,7 @@ def release_blog(request):
         else:
             text = request.POST.get('content')
             pictures = request.FILES.getlist('pictures')
-            topics = request.POST.get('topics').split(' ')
+            topics = request.POST.get('topics').split('#')
 
             if len(text) > 256:
                 content = {"error_code":433, "message":"正文内容不能超过256字", "data":None}
@@ -61,11 +61,12 @@ def release_blog(request):
                 content = {"error_code":433, "message":"图片最多只能上传9张", "data":None}
             elif len(text) == 0 and len(pictures) == 0:
                 content = {"error_code":433, "message":"博客内容不能为空", "data":None}
+            elif len(topics) > 10:
+                content = {"error_code":433, "message":"话题最多只能添加10个", "data":None}
             else:
                 blog=Blog.objects.create(user=user,content=text)
                 for i,picture in enumerate(pictures):
                     Picture.objects.create(blog=blog,image=picture,num=i)
-                #print(topics)
                 for topic in topics:
                     if Topic.objects.filter(name=topic).exists() is False:
                         tpc=Topic.objects.create(name=topic)
@@ -315,8 +316,8 @@ def hot_topics(request):
         counts = sorted(counts.items(),key=lambda x:x[1],reverse=True)
         if len(counts)>10: length = 10
         else: length = len(counts)
-        rank = counts[:length]
-        content = {"error_code": 200, "message": "查找话题成功", "data": rank}
+        targets = [key for key,value in counts[:length]]
+        content = {"error_code": 200, "message": "查找话题成功", "data": targets}
     return HttpResponse(json.dumps(content))
 
 
