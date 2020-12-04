@@ -42,7 +42,7 @@ def generate_blog_content(b):
 def release_blog(request):
     # 发布博客
     # Arguments:
-    #     request: It should contains {"content":<str>,"pictures":<file>,"pictures":<file>...} need Cookie
+    #     request: It should contains {"content":<str>,"pictures":<file>,"topics":<str>...} need Cookie
     # Return:
     #     An HttpResponse which contains {"error_code":<int>, "message":<str>,"data":None}
     content={}
@@ -53,7 +53,7 @@ def release_blog(request):
         else:
             text = request.POST.get('content')
             pictures = request.FILES.getlist('pictures')
-            topics = request.POST.get('topics').split('#')
+            topics = request.POST.getlist('topics')
 
             if len(text) > 256:
                 content = {"error_code":433, "message":"正文内容不能超过256字", "data":None}
@@ -80,7 +80,7 @@ def release_blog(request):
 def refresh_blogs(request):
     # 刷新动态主页，获得自己和关注对象的所有博客
     # Arguments:
-    #     request: It should contains {"content":<str>,"pictures":<file>,"pictures":<file>...} need Cookie
+    #     request: empty need Cookie
     # Return:
     #     An HttpResponse which contains {"error_code":<int>, "message":<str>,"data":<list>}
     content={}
@@ -273,7 +273,7 @@ def cancel_like(request):
             if Blog.objects.filter(id=target_blog_id).exists() == False:
                 content = {"error_code": 441, "message": "取消点赞的目标博客不存在", "data": None}
             else:
-                target_blog = User.objects.get(id=target_blog_id)
+                target_blog = Blog.objects.get(id=target_blog_id)
                 if Like.objects.filter(user=from_user, blog=target_blog).exists() is False:
                     content = {"error_code": 442, "message": "当前还未点赞", "data": None}
                 else:
@@ -291,11 +291,8 @@ def search_topic(request):
     content = {}
     if request.method == 'POST':
         keyword = request.POST.get('keyword')
-        topics = Topic.objects.all()
-        targets = []
-        for topic in topics:
-            if len(re.findall(keyword,topic.name))!=0:
-                targets.append(topic.name)
+        topics_found = Topic.objects.filter(name__icontains = keyword)
+        targets = [t.name for t in topics_found]
         content = {"error_code": 200, "message": "查找话题成功", "data": targets}
     return HttpResponse(json.dumps(content))
 

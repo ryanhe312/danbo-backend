@@ -639,11 +639,8 @@ def search_user(request):
     content = {}
     if request.method == 'POST':
         keyword = request.POST.get('keyword')
-        users = User.objects.all()
-        targets = []
-        for user in users:
-            if len(re.findall(keyword,user.username))!=0:
-                targets.append(user.username)
+        users_found = User.objects.filter(nickname__icontains = keyword)
+        targets = [u.username for u in users_found]
         content = {"error_code": 200, "message": "查找用户成功", "data": targets}
     return HttpResponse(json.dumps(content))
 
