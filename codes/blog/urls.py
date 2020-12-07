@@ -11,4 +11,7 @@ urlpatterns = [
     path('getComments',views.get_comments),
     path('getLikes',views.get_likes),
     path('refreshBlogs',views.refresh_blogs),
+    path('searchTopic',views.search_topic),
+    path('getTopicBlogs',views.get_topic_blogs),
+    path('hotTopics',views.hot_topics),
 ]

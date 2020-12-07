@@ -5,6 +5,9 @@ import json
 
 # Create your tests here.
 
+# 这里还有topic相关的测试
+# release限制了话题数为10
+# refresh加了个topic
 class TestBlog(TestCase):
     # 博客测试
     # release_blog...
@@ -16,6 +19,9 @@ class TestBlog(TestCase):
     # get_comments...
     # comment...
     # repost_blog
+    # search_topic...
+    # get_topic_blogs...
+    # hot_topics...
 
     def setUp(self):
 
@@ -42,21 +48,27 @@ class TestBlog(TestCase):
     def test_release_blogs(self):
 
         print("--------发布博客测试--------")
+        print("-----话题过多-----")
+        content = "测试博客"
+        error, data = self.release_blog("xsh", content, topics = ['topic2','topic1','topic4','topic12','topic5','topic6','topic7','topic8','topic9','topic10','topic11'])
+        assert error == 433, "error code = %d"%(error)
+
+        print("-----正常发布-----")
         content = "这是第一条博客"
-        error, data = self.release_blog("xsh", content)
+        error, data = self.release_blog("xsh", content, topics = ['topic2', 'topic1', 'topic4'])
         assert error == 200, "error code = %d"%(error)
 
         content = "这是第二条博客，今天有点冷。"
         #pictures = [open('C:/Users/super/Desktop/美图/头像.jpg', 'rb')]
-        error, data = self.release_blog("xsh", content)
+        error, data = self.release_blog("xsh", content, topics = ['topic3', 'topic2'])
         assert error == 200, "error code = %d"%(error)
 
         content = "这是第三条博客，想摸鱼打游戏"
         #pictures = [open('C:/Users/super/Desktop/美图/头像.jpg', 'rb'), open('C:/Users/super/Desktop/美图/loble/66601726_p2_master1200.jpg', 'rb')]
-        error, data = self.release_blog("xsh", content)
+        error, data = self.release_blog("xsh", content, topics = ['topic1', 'topic3'])
         assert error == 200, "error code = %d"%(error)
         #pictures = [open('C:/Users/super/Desktop/美图/头像.jpg', 'rb'), open('C:/Users/super/Desktop/美图/loble/66601726_p2_master1200.jpg', 'rb')]
-        error, data = self.release_blog("xsh1", content)
+        error, data = self.release_blog("xsh1", content, topics =['topic1'])
         assert error == 200, "error code = %d"%(error)
 
         print("--------获取博客测试--------")
@@ -76,8 +88,25 @@ class TestBlog(TestCase):
         error, data = self.give_like(3)
         assert error == 200, "error code = %d"%(error)
 
+        error, data = self.cancel_like(3)
+        assert error == 200, "error code = %d"%(error)
+        
+        error, data = self.cancel_like(3)
+        assert error == 442, "error code = %d"%(error)
+
+        error, data = self.give_like(3)
+        assert error == 200, "error code = %d"%(error)
+
         error, data = self.give_like(4)
         assert error == 200, "error code = %d"%(error)
+
+        print("-----重复点赞-----")
+        error, data = self.give_like(3)
+        assert error == 442, "error code = %d"%(error)
+
+        print("-----博客不存在-----")
+        error, data = self.give_like(2147483647)
+        assert error == 441, "error code = %d"%(error)
 
         print("--------评论博客测试--------")
         error, data = self.comment(1,"想摸鱼")
@@ -88,11 +117,30 @@ class TestBlog(TestCase):
 
         self.client.cookies['username'] = "xsh1"
         error, data = self.comment(1,"摸！")
+        assert error == 200, "error code = %d"%(error)
+
         self.client.cookies['username'] = "xsh3"
         error, data = self.comment(1,"摸+1！")
+        assert error == 200, "error code = %d"%(error)
+
         error, data = self.give_like(1)
         self.client.cookies['username'] = "xsh"
         assert error == 200, "error code = %d"%(error)
+
+        print("-----评论过长-----")
+        content = "".join(["a" for i in range(32)])
+        error, data = self.comment(1, content)
+        assert error == 433, "error code = %d"%(error)
+
+        print("-----评论为空-----")
+        content = ""
+        error, data = self.comment(1, content)
+        assert error == 433, "error code = %d"%(error)
+
+        print("-----评论博客不存在-----")
+        content = "测试评论"
+        error, data = self.comment(2147483647, content)
+        assert error == 443, "error code = %d"%(error)
 
         print("--------转发博客测试--------")
         error, data = self.repost_blog(1,"那我就摸了")
@@ -102,11 +150,39 @@ class TestBlog(TestCase):
         error, data = self.repost_blog(5,"可以")
         assert error == 200, "error code = %d"%(error)
 
+        print("-----转发过长-----")
+        content = "".join(["a" for i in range(101)])
+        error, data = self.repost_blog(5, content)
+        assert error == 433, "error code = %d"%(error)
+
         self.client.cookies['username'] = "xsh"
         error, data = self.refresh_blogs()
         assert error == 200, "error code = %d"%(error)
 
         self.process_blog(data)
+
+        print("--------搜索话题--------")
+        self.search_topic("topic")
+        self.search_topic("C1")
+
+        print("--------话题博客--------")
+        error, data = self.get_topic_blogs("topic")
+        assert error == 441, "error code = %d"%(error)
+
+        error, data = self.get_topic_blogs("topic1")
+        assert error == 200, "error code = %d"%(error)
+        self.process_blog(data)
+
+        error, data = self.get_topic_blogs("topic2")
+        assert error == 200, "error code = %d"%(error)
+        self.process_blog(data)
+
+        print("--------热门话题--------")
+        response = self.client.post('/blog/hotTopics', {})
+        cont = json.loads(response.content)
+        error, data = cont['error_code'], cont['data']
+        assert error == 200, "error code = %d"%(error)
+        print("热门话题：\n", data)
 
     def process_blog(self, blogs):
 
@@ -118,6 +194,10 @@ class TestBlog(TestCase):
             error, comments = self.get_comments(id)
             assert error == 200, "error code = %d"%(error)
             print("发布时间：%s"%(blog['time']))
+            print("话题：", end = '')
+            for t in blog['tags']:
+                print("#%s# "%(t), end = '')
+            print()
             user = False
             i = 0
             for i in range(len(blog['users'])):
@@ -153,11 +233,12 @@ class TestBlog(TestCase):
                 print("\t评论时间：%s 评论者：%s"%(cmt['time'], cmt['username']))
                 print("\t\t", cmt['content'])
 
-    def release_blog(self, username, content, pictures = []):
+    def release_blog(self, username, content, pictures = [], topics = ""):
         self.client.cookies['username'] = username
         request = {
             'content':content,
-            'pictures':pictures
+            'pictures':pictures,
+            'topics':topics
             }
 
         response = self.client.post('/blog/releaseBlog', request)
@@ -252,3 +333,27 @@ class TestBlog(TestCase):
         content = json.loads(response.content)
 
         return content['error_code'], content['data']
+
+    def search_topic(self, keyword):
+
+        request = {
+            'keyword':keyword
+            }
+
+        response = self.client.post('/blog/searchTopic', request)
+        content = json.loads(response.content)
+        error, data = content['error_code'], content['data']
+        assert error == 200, "error code = %d"%(error)
+        print(data)
+
+    def get_topic_blogs(self, topic):
+
+        request = {
+            'topic':topic
+            }
+
+        response = self.client.post('/blog/getTopicBlogs', request)
+        content = json.loads(response.content)
+
+        return content['error_code'], content['data']
+

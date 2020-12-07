@@ -1,6 +1,8 @@
 # danbo-backend
 
 这是蛋博项目的后端代码库，主项目请见[蛋博](https://github.com/chty627/Software-Engineering-Project---Danbo)。
+蛋博后端使用Python写成，调用了django框架，后端负责用户，博文，评论等相关功能的模型（数据库）实现和增删改查的接口包装，完成登陆注册，发布博文，发表评论，搜索博文等等功能。
+后端实现的API文档详见[API文档](./API.md)，后端架构文档详见[架构文档](./Structure.md)。
 
 ## 目录
 
@@ -20,7 +22,7 @@
 
 * 运行指令
 
-  python3 manage.py makemigrations app1 app2 ...
+  python3 manage.py makemigrations user blog
 
   python3 manage.py migrate
 

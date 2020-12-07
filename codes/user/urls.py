@@ -26,5 +26,6 @@ urlpatterns = [
     path('getFollowers',views.get_followers),
     path('getFollowees',views.get_followees),
     path('getEmail',views.get_email),
-    path('modifyPwdLogin',views.modify_password_login)
+    path('modifyPwdLogin',views.modify_password_login),
+    path('searchUser',views.search_user),
 ]
