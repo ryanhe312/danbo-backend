@@ -11,6 +11,7 @@ import json
 def generate_blog_content(b):
     contents = []
     users = []
+    b_id = b.id
     time = b.release_time.strftime("%Y-%m-%d %H:%M:%S")
 
     while b.repost_link != -1:
@@ -28,6 +29,7 @@ def generate_blog_content(b):
     for tag in tags:
         topics.append(tag.topic.name)
     data = {
+        'id': b_id,
         'time': time,
         'origin_user': b.user.username,
         'origin_content': b.content,
@@ -89,18 +91,19 @@ def refresh_blogs(request):
         if user is None:
             content = {"error_code": 431, "message": "用户名不存在或当前未登录", "data": None}
         else:
-            data = {}
+            data = []
             self_blogs = Blog.objects.filter(user=user)
             for b in self_blogs:
-                data[b.id] = generate_blog_content(b)
+                data.append(generate_blog_content(b))
 
             followships = Follow.objects.filter(from_user = user)
             for followship in followships:
                 followee = followship.to_user
                 follow_blogs = Blog.objects.filter(user=followee)
                 for b in follow_blogs:
-                    data[b.id] = generate_blog_content(b)
+                    data.append(generate_blog_content(b))
 
+            data.sort(key=lambda x:x['id'],reverse=True)
             content = {"error_code": 200, "message": "获取博客成功", "data": data}
     return HttpResponse(json.dumps(content))
 
@@ -113,7 +116,7 @@ def get_blogs(request):
     #     Here data is a dictionary, its key is the id of the blog, and its value is a dictionary (time<str>,original_user<str>,original_content<str>,users<list>,contents<int>,pictures<list>,tags<list>)
 
     content = {}
-    data = {}
+    data = []
     if request.method == 'POST':
         username = request.POST.get('username')
         if User.objects.filter(username=username).exists()==False:
@@ -122,8 +125,9 @@ def get_blogs(request):
             user = User.objects.get(username=username)
             blogs = Blog.objects.filter(user = user)
             for b in blogs:
-                data[b.id] = generate_blog_content(b)
+                data.append(generate_blog_content(b))
 
+            data.sort(key=lambda x:x['id'],reverse=True)
             content = {"error_code": 200, "message": "获取博客成功", "data": data}
     return HttpResponse(json.dumps(content))
 
@@ -163,15 +167,15 @@ def get_comments(request):
             content = {"error_code": 442, "message": "目标博客不存在", "data": None}
         else:
             blog = Blog.objects.get(id=blog_id)
-            data = {}
+            data = []
             comments = Comment.objects.filter(blog=blog)
             for cmt in comments:
-                data[cmt.id] = {
+                data.append({
                     'time': cmt.release_time.strftime("%Y-%m-%d %H:%M:%S"),
                     'username': cmt.user.username,
-                    'blog_id':cmt.id,
+                    'id':cmt.id,
                     'content':cmt.content,
-                  }
+                  })
 
             content = {"error_code": 200, "message": "评论获取成功", "data": data}
     
@@ -199,8 +203,11 @@ def repost_blog(request):
                 if Blog.objects.filter(id=blog_id).exists() is False:
                     content = {"error_code": 442, "message": "转发的目标博客不存在", "data": None}
                 else:
-                    Blog.objects.create(user=user,content=text,repost_link=blog_id)
-
+                    blog = Blog.objects.create(user=user,content=text,repost_link=blog_id)
+                    origin_blog = Blog.objects.get(id=blog_id)
+                    tags = Tag.objects.filter(blog=origin_blog)
+                    for tag in tags:
+                        Tag.objects.create(blog=blog,topic=tag.topic)
                     content = {"error_code": 200, "message": "博客转发成功", "data": None}
     
     return HttpResponse(json.dumps(content))
@@ -289,11 +296,16 @@ def search_topic(request):
     # Return:
     #     An HttpResponse which contains {"error_code":<int>, "message":<str>,"data":<list>}
     content = {}
+    data = []
     if request.method == 'POST':
         keyword = request.POST.get('keyword')
         topics_found = Topic.objects.filter(name__icontains = keyword)
-        targets = [t.name for t in topics_found]
-        content = {"error_code": 200, "message": "查找话题成功", "data": targets}
+        for t in topics_found:
+            data.append({
+                'topic':t.name,
+                'time':t.create_time.strftime("%Y-%m-%d %H:%M:%S"),
+            })
+        content = {"error_code": 200, "message": "查找话题成功", "data": data}
     return HttpResponse(json.dumps(content))
 
 def hot_topics(request):
@@ -304,17 +316,25 @@ def hot_topics(request):
     #     An HttpResponse which contains {"error_code":<int>, "message":<str>,"data":<dict>}
     #     Here data is a dictionary, its key is the name of the topic, and its value is count<int>
     content = {}
-    counts = {}
+    count = {}
+    data = []
     if request.method == 'POST':
         topics = Topic.objects.all()
         for topic in topics:
             topic_name = topic.name
-            counts[topic_name] = len(Tag.objects.filter(topic=topic_name))
-        counts = sorted(counts.items(),key=lambda x:x[1],reverse=True)
+            count[topic_name] = len(Tag.objects.filter(topic=topic_name))
+        counts = sorted(count.items(),key=lambda x:x[1],reverse=True)
         if len(counts)>10: length = 10
         else: length = len(counts)
         targets = [key for key,value in counts[:length]]
-        content = {"error_code": 200, "message": "查找话题成功", "data": targets}
+        for target in targets:
+            topic = Topic.objects.get(name=target)
+            data.append({
+                'topic':target,
+                'time':topic.create_time.strftime("%Y-%m-%d %H:%M:%S"),
+                'count':count[target]
+            })
+        content = {"error_code": 200, "message": "查找话题成功", "data": data}
     return HttpResponse(json.dumps(content))
 
 
@@ -326,7 +346,7 @@ def get_topic_blogs(request):
     #     An HttpResponse which contains {"error_code":<int>, "message":<str>,"data":<dict>}
     #     Here data is a dictionary, its key is the id of the blog, and its value is a dictionary (time<str>,original_user<str>,original_content<str>,users<list>,contents<int>,pictures<list>,tags<list>)
     content = {}
-    data = {}
+    data = []
     if request.method == 'POST':
         topic = request.POST.get('topic')
         if Topic.objects.filter(name=topic).exists() == False:
@@ -335,7 +355,9 @@ def get_topic_blogs(request):
             tags = Tag.objects.filter(topic=topic)
             for tag in tags:
                 blog = tag.blog
-                data[blog.id] = generate_blog_content(blog)
+                data.append(generate_blog_content(blog))
+
+            data.sort(key=lambda x:x['id'],reverse=True)
             content = {"error_code": 200, "message": "查找博客成功", "data": data}
     return HttpResponse(json.dumps(content))
 
