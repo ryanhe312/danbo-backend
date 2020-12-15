@@ -177,6 +177,7 @@ def get_comments(request):
                     'content':cmt.content,
                   })
 
+            data.sort(key=lambda x:x['id'],reverse=True)
             content = {"error_code": 200, "message": "评论获取成功", "data": data}
     
     return HttpResponse(json.dumps(content))
