@@ -881,6 +881,71 @@ class TestFollow(TestCase):
         content = json.loads(response.content)
         return content['error_code'], content['data']
 
+class TestSearch(TestCase):
+# 搜索功能
+# search_user...
+    @classmethod
+    def setUpClass(cls):
+
+        # 新建四个用户
+        User.objects.all().delete()
+        password = make_password("xingshuhao990729")
+        User.objects.create(username = "xsh",password = password,email = "17307130121@fudan.edu.cn", nickname = "xsh")
+        password = make_password("123456")
+        User.objects.create(username = "xsh1",password = password,email = "17307130122@fudan.edu.cn", nickname = "xsh1")
+        password = make_password("123456")
+        User.objects.create(username = "xsh2",password = password,email = "17307130123@fudan.edu.cn", nickname = "xsh2")
+        password = make_password("123456")
+        User.objects.create(username = "xsh3",password = password,email = "17307130124@fudan.edu.cn", nickname = "xsh3")
+        password = make_password("123456")
+        User.objects.create(username = "hraxs",password = password,email = "17307130125@fudan.edu.cn", nickname = "hra")
+        return super().setUpClass()
+
+    def setUp(self):
+
+        self.client.cookies["username"] = "xsh"
+        print("--------------开始搜索测试--------------")
+
+    def tearDown(self):
+
+        print("--------------结束搜索测试--------------")
+        return super().tearDown()
+
+    def test_search_user(self):
+
+        request = {"keyword":"xsh"}
+        response = self.client.post("/user/searchUser", request)
+        expected = ['xsh', 'xsh1', 'xsh2', 'xsh3']
+        self.check_data(response, expected)
+
+        request = {"keyword":"xs"}
+        response = self.client.post("/user/searchUser", request)
+        expected = ['xsh', 'xsh1', 'xsh2', 'xsh3']
+        self.check_data(response, expected)
+
+        request = {"keyword":"H1"}
+        response = self.client.post("/user/searchUser", request)
+        expected = ['xsh1']
+        self.check_data(response, expected)
+
+        request = {"keyword":"hra"}
+        response = self.client.post("/user/searchUser", request)
+        expected = ['hraxs']
+        self.check_data(response, expected)
+
+    def check_data(self, response, expected):
+
+        content = json.loads(response.content)
+        error, data = content['error_code'], content['data']
+
+        assert error == 200, "error code = %d"%(error)
+
+        data = sorted(data)
+        expected = sorted(expected)
+        assert data == expected, "\ndata = %s\nexpected = %s"%(data, expected)
+
+        return
+
 #class TestProfile(TestCase):
 
 #    def setUp(self):

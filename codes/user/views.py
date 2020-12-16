@@ -637,13 +637,16 @@ def search_user(request):
     # Return:
     #     An HttpResponse which contains {"error_code":<int>, "message":<str>,"data":<list>}
     content = {}
+    data = []
     if request.method == 'POST':
         keyword = request.POST.get('keyword')
-        users = User.objects.all()
-        targets = []
-        for user in users:
-            if len(re.findall(keyword,user.username))!=0:
-                targets.append(user.username)
-        content = {"error_code": 200, "message": "查找用户成功", "data": targets}
+        users_found = User.objects.filter(nickname__icontains = keyword)
+        for u in users_found:
+            data.append({
+                'username':u.username,
+                'nickname':u.nickname,
+                'signature':u.signature,
+            })
+        content = {"error_code": 200, "message": "查找用户成功", "data": data}
     return HttpResponse(json.dumps(content))
 
