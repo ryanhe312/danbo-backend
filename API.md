@@ -1,8 +1,8 @@
 # 蛋博Web API文档
 
-版本20201211.11
+版本20201216.12
 
-UPD：获取评论，获取博客，话题博客，话题搜索，用户搜索
+UPD：获取关注列表，获取被关注列表
 
 ## 目录
 
@@ -36,9 +36,9 @@ UPD：获取评论，获取博客，话题博客，话题搜索，用户搜索
 
 [四、关注API](#四关注API)
 * [1.关注](#1关注)
-* [2.取关](2.取关)
-* [3.获取关注列表](3.获取关注列表)
-* [4.获取被关注列表](4.获取被关注列表)
+* [2.取关](#2取关)
+* [3.获取关注列表](#3获取关注列表)
+* [4.获取被关注列表](#4获取被关注列表)
 
 [五、博客API](#五博客api)
 
@@ -108,7 +108,7 @@ name表示键值名，type表示键值类型，包括text文本和file文件两�
 
 6. 本系统仅支持学邮注册，也即邮箱必须以@fudan.edu.cn结尾。
 
-7. 博客，评论等返回值均已统一为列表结构，列表中的元素为包含信息的词典结构，解析的时候请参照对应文档。
+7. 博客，评论，用户列表，话题列表等返回值均已统一为列表结构，列表中的元素为包含信息的词典结构，解析的时候请参照对应文档。
 
 
 ## 二、登陆API
@@ -693,8 +693,18 @@ username:text
 
 {"error_code":441,"message":"用户名不存在","data":None}
 
-{"error_code": 200, "message": "获取关注列表成功", "data": signature}
+{"error_code": 200, "message": "获取关注列表成功", "data": data}
 
+data 是一个列表结构，元素是包含用户信息的词典：
+
+```python
+data.append({
+    'username': to_user.username,
+    'nickname': to_user.nickname,
+    'signature': to_user.signature,
+    'profile':profile_path
+    }) 
+```
 
 
  ### 4.获取被关注列表
@@ -713,8 +723,9 @@ username:text
 
 {"error_code":441,"message":"用户名不存在","data":None}
 
-{"error_code": 200, "message": "获取关注者列表成功", "data": signature}
+{"error_code": 200, "message": "获取关注者列表成功", "data": data}
 
+data 详见上方 3.获取关注列表 定义。
  
 
 ## 五、博客API

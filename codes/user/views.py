@@ -513,13 +513,14 @@ def get_email(request):
             content = {"error_code": 200, "message": "获取邮箱成功", "data": email}
     return HttpResponse(json.dumps(content))
 
-def get_followees(request):
+def get_followings(request):
     # 获取指定用户所关注的用户名列表
     # Arguments:
     #     request: It should contains {"username":<str>}
     # Return:
     #     An HttpResponse which contains {"error_code":<int>, "message":<str>,"data":<list>}
     content = {}
+    data = []
     if request.method == 'POST':
         username = request.POST.get('username')
         if User.objects.filter(username=username).exists() == False:
@@ -528,23 +529,23 @@ def get_followees(request):
             user = User.objects.get(username=username)
             followships = Follow.objects.filter(from_user = user)
 
-            followees = {}
             for followship in followships :
                 to_user = User.objects.get(username=followship.to_user.username)
 
                 if Profile.objects.filter(user=to_user).exists()==False:
-                    profile_path = 'default_path'
+                    profile_path = 'profiles/default.jpeg'
                 else:
                     profile = Profile.objects.get(user=to_user)
                     profile_path = str(profile.image)
 
-                followees[to_user.username] = {
+                data.append({
+                    'username': to_user.username,
                     'nickname': to_user.nickname,
                     'signature': to_user.signature,
-                    'profile':profile_path
-                    }
+                    'profile': profile_path
+                    }) 
 
-            content = {"error_code": 200, "message": "获取关注列表成功", "data": followees}
+            content = {"error_code": 200, "message": "获取关注列表成功", "data": data}
     return HttpResponse(json.dumps(content))
 
 def get_followers(request):
@@ -554,6 +555,7 @@ def get_followers(request):
     # Return:
     #     An HttpResponse which contains {"error_code":<int>, "message":<str>,"data":<list>}
     content = {}
+    data = []
     if request.method == 'POST':
         username = request.POST.get('username')
         if User.objects.filter(username=username).exists() == False:
@@ -562,23 +564,23 @@ def get_followers(request):
             user = User.objects.get(username=username)
             followships = Follow.objects.filter(to_user = user)
 
-            followers = {}
             for followship in followships :
                 from_user = User.objects.get(username=followship.from_user.username)
 
                 if Profile.objects.filter(user=from_user).exists()==False:
-                    profile_path = 'default_path'
+                    profile_path = 'profiles/default.jpeg'
                 else:
                     profile = Profile.objects.get(user=from_user)
                     profile_path = str(profile.image)
 
-                followers[from_user.username] = {
+                data.append({
+                    'username': from_user.username,
                     'nickname': from_user.nickname,
                     'signature': from_user.signature,
-                    'profile':profile_path
-                    }
+                    'profile': profile_path
+                    })
 
-            content = {"error_code": 200, "message": "获取关注者列表成功", "data": followers}
+            content = {"error_code": 200, "message": "获取关注者列表成功", "data": data}
     return HttpResponse(json.dumps(content))
 
 
