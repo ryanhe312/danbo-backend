@@ -27,6 +27,10 @@
   python3 manage.py migrate
 
   python3 manage.py runserver
+  
+* 服务器部署
+
+  python3 manage.py runserver 0.0.0.0:8000
 
 ## 注意事项
 
