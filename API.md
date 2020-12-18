@@ -709,7 +709,7 @@ data.append({
 
  ### 4.获取被关注列表
 
-请求地址：/user/getFollowees
+请求地址：/user/getFollowings
 
 请求方式：POST
 
