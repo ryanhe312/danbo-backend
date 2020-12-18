@@ -31,6 +31,13 @@
 * 服务器部署
 
   python3 manage.py runserver 0.0.0.0:8000
+  
+* 数据库管理
+
+  python3 manage.py createsuperuser
+
+  本地测试：http://127.0.0.1:8000/admin
+  服务器部署：http://server-ip:8000/admin
 
 ## 注意事项
 
