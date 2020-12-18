@@ -20,7 +20,7 @@ class User(models.Model):
     email =  models.CharField(max_length=40,unique='True')     #邮箱
     nickname = models.CharField(max_length=20,default='游客')     #昵称
     signature = models.CharField(max_length=30,default="这个人很懒，什么都没留下",null=True,blank=True)  #签名
-    birthday = models.DateField(null=True,blank=True)     #生日
+    birthday = models.DateField(null=True,blank=True,default="1978-01-01")     #生日
     gender = models.IntegerField(default=2)      #性别 0 male 1 female 2 secret
     address = models.CharField(max_length=40,null=True,blank=True,default="地址未填写")   #地址
 #验证码
