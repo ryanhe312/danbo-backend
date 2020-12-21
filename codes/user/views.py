@@ -241,6 +241,7 @@ def modify_password_login(request):
         else:
             password = request.POST.get('password')
             r_password = request.POST.get('r_password')
+            email = request.POST.get('email')
             code = request.POST.get('code')
             if check_password2(password) == False:
                 content = {"error_code": 423, "message": "密码只能由大小写字母，数字组成，且长度应在6-20", "data": None}
